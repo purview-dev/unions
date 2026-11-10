@@ -28,6 +28,10 @@
 		-->
 		<TUnitVersion>1.81.16</TUnitVersion>
 	</PropertyGroup>
+	<PropertyGroup Label="Benchmark Versions">
+		<!-- Matches Purview.SourceGeneratorFramework and Purview.EventSourcing. -->
+		<BenchmarkDotNetVersion>0.15.8</BenchmarkDotNetVersion>
+	</PropertyGroup>
 	<ItemGroup Label="Purview">
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework"
@@ -45,6 +49,9 @@
 	</ItemGroup>
 	<ItemGroup Label="Other">
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
+	</ItemGroup>
+	<ItemGroup Label="Benchmarks">
+		<PackageVersion Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
 	</ItemGroup>
 	<ItemGroup Label="Testing">
 		<PackageVersion Include="Bogus" Version="35.6.5" />

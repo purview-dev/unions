@@ -19,6 +19,51 @@ public sealed class RepositoryConfigTests
 	}
 
 	[Test]
+	public async Task Solution_ListsTheBenchmarksProject(CancellationToken cancellationToken)
+	{
+		var solution = await ReadAsync("src/Unions.slnx", cancellationToken);
+
+		await Assert.That(solution).Contains("src/Benchmarks/Benchmarks.csproj");
+		await Assert
+			.That(File.Exists(Path.Combine(RepositoryRoot.Value, "src", "src", "Benchmarks", "Benchmarks.csproj")))
+			.IsTrue();
+	}
+
+	[Test]
+	public async Task Solution_ReferencesTheRealBuildConfiguration(CancellationToken cancellationToken)
+	{
+		var solution = await ReadAsync("src/Unions.slnx", cancellationToken);
+
+		await Assert.That(solution).Contains("../.config/purview-build.json");
+		await Assert.That(File.Exists(Path.Combine(RepositoryRoot.Value, ".config", "purview-build.json"))).IsTrue();
+	}
+
+	[Test]
+	public async Task PrWorkflow_TestFilterMatchesTheBuildConfiguration(CancellationToken cancellationToken)
+	{
+		var config = await ReadAsync(".config/purview-build.json", cancellationToken);
+		var workflow = await ReadAsync(".github/workflows/pr.yml", cancellationToken);
+
+		await Assert.That(config).Contains("/*/*/*/*[Category=Unit]");
+		await Assert.That(workflow).Contains("/*/*/*/*[Category=Unit]");
+	}
+
+	[Test]
+	public async Task PerformanceStructure_IsWiredIntoTheRepository(CancellationToken cancellationToken)
+	{
+		var packages = await ReadAsync("Directory.Packages.props", cancellationToken);
+		var justfile = await ReadAsync("Justfile", cancellationToken);
+		var sidebar = await ReadAsync("docs/wiki/_Sidebar.md", cancellationToken);
+		var readme = await ReadAsync("README.md", cancellationToken);
+
+		await Assert.That(packages).Contains("BenchmarkDotNet");
+		await Assert.That(justfile).Contains("perf-tests");
+		await Assert.That(justfile).Contains("src/src/Benchmarks/Benchmarks.csproj");
+		await Assert.That(sidebar).Contains("(Performance.md)");
+		await Assert.That(readme).Contains("docs/wiki/Performance.md");
+	}
+
+	[Test]
 	public async Task BuildConfiguration_NamesEveryPackageContent(CancellationToken cancellationToken)
 	{
 		var config = await ReadAsync(".config/purview-build.json", cancellationToken);

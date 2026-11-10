@@ -6,7 +6,7 @@
 		<File Path="../Justfile" />
 		<File Path="../nuget.config" />
 		<File Path="../package.json" />
-		<File Path="../purview-build.json" />
+		<File Path="../.config/purview-build.json" />
 		<File Path="Directory.Build.props" />
 		<File Path="Directory.Build.targets" />
 	</Folder>
@@ -14,6 +14,7 @@
 		<Project Path="src/Unions/Unions.csproj" />
 		<Project Path="src/SourceGenerator/SourceGenerator.csproj" />
 		<Project Path="src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj" />
+		<Project Path="src/Benchmarks/Benchmarks.csproj" />
 	</Folder>
 	<Folder Name="/src/examples/">
 		<Project Path="src/Examples/Examples.csproj" />

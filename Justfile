@@ -6,6 +6,7 @@ export DOTNET_SKIP_FIRST_TIME_EXPERIENCE := "1"
 export DO_NOT_TRACK := "1"
 
 solution := "src/Unions.slnx"
+benchmarks_project := "src/src/Benchmarks/Benchmarks.csproj"
 build_configuration := "Debug"
 
 artifacts_folder := "./artifacts"
@@ -91,6 +92,12 @@ test filter=default_test_filter *args:
 [group('Build and Test')]
 test-unit *args:
     just test "/*/*/*/*[Category=Unit]" {{ args }}
+
+# Run the performance benchmarks (Release, net10.0 by default; pass `-f net11.0` to measure .NET 11)
+[group('Build and Test')]
+perf-tests *args:
+    echo "Running performance benchmarks for {{ BLUE }}{{ benchmarks_project }}{{ NORMAL }}"
+    dotnet run --project {{ benchmarks_project }} -c Release -f net10.0 {{ args }}
 
 # Restore dependencies for the solution
 [group('Build and Test')]

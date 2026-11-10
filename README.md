@@ -121,6 +121,10 @@ What the compiler uses for patterns is the **non-boxing access pattern** the gen
 `tests/SourceGenerator.UnitTests/GeneratedUnionRuntimeTests` asserts exactly this with
 `GC.GetAllocatedBytesForCurrentThread()`.
 
+The committed BenchmarkDotNet suite in `src/src/Benchmarks` measures the same operations, the generic surfaces
+and the generator itself, with an `object`-backed baseline. Run `just perf-tests` (Release, `net10.0`) or
+`just perf-tests -f net11.0`; the recorded results are on the [Performance](docs/wiki/Performance.md) page.
+
 ## Declaration kinds
 
 `struct`, `readonly struct`, `class`, `record struct` and `record class` are all supported. A class union uses
@@ -174,6 +178,8 @@ fallback path, the `[Union]` attribute (`UNI0007`).
 - [Diagnostics](docs/wiki/Diagnostics.md)
 - [Interop](docs/wiki/Interop.md) — Results, Telemetry, ZodSharp and the follow-ups
 - [Trimming and AOT](docs/wiki/Trimming-AOT.md)
+- [Performance](docs/wiki/Performance.md) — the benchmark suite and the measured allocation results
+- [Release Flow](docs/wiki/Release-Flow.md) — the PR and release gates
 
 ## Agent skills
 

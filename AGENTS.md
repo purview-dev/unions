@@ -130,6 +130,16 @@ The three published skills, authored for consumers of the package:
 - Every diagnostic needs a positive case; every fix needs a test. The compiler experiments in
   `CompilerBehaviourTests` are permanent — they are the evidence for the design.
 
+## Performance rules
+
+- The benchmark project is `src/src/Benchmarks`; run it with `just perf-tests` (Release, net10.0) or
+  `just perf-tests -f net11.0`. Never benchmark a Debug build.
+- Benchmarks are evidence for the README's allocation claims, not a CI gate: shared-runner timings are
+  noise. Add or change a suite when a hot path or a claim changes, and record the results in
+  `docs/wiki/Performance.md`.
+- `Value` boxes a value-type case by design; a suite that shows an allocation there is correct. An
+  allocation on construction, `TryGetValue`, `is`, `switch` or `HasValue` is a regression.
+
 ## Canonical commands
 
 | Command | Purpose |
@@ -137,6 +147,7 @@ The three published skills, authored for consumers of the package:
 | `just restore` | restore the solution |
 | `just build` | build the solution |
 | `just test` | run every test project on both target frameworks |
+| `just perf-tests` | run the BenchmarkDotNet suite (Release; `-f net11.0` for .NET 11) |
 | `just lint-check` / `just lint-fix` | CSharpier check / format |
 | `just pipeline-pr` | restore, build, lint and test |
 | `just pipeline-pack-validate` | pack and validate package contents |

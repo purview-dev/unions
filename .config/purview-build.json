@@ -4,7 +4,7 @@
 		"TestRoot": "src/tests",
 		"TestPatterns": "*Tests.csproj",
 		"TestProjects": "*Tests*",
-		"TestFilter": "/*/*/*/*"
+		"TestFilter": "/*/*/*/*[Category=Unit]"
 	},
 	"PackValidation": {
 		// Explicit because Purview.Build defaults RequiredCompilerFlags to empty. These packages are

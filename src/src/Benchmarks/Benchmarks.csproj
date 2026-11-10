@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<LangVersion>preview</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>false</IsTestProject>
+		<RootNamespace>Purview.Unions.Benchmarks</RootNamespace>
+		<!-- BenchmarkDotNet relies on the assembly name for its generated runner. -->
+		<AssemblyName>Benchmarks</AssemblyName>
+		<NoWarn>$(NoWarn);CA1515;CA1707;CA1815;IDE0130</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Unions\Unions.csproj" />
+		<!--
+			Referenced as an assembly so the generator can be run directly by GeneratorBenchmarks, and
+			added again as an analyzer by AddMergedUnionsGenerator below so this project's own
+			[GenerateUnion] declarations are compiled by the artifact that ships.
+		-->
+		<ProjectReference Include="..\SourceGenerator\SourceGenerator.csproj" />
+	</ItemGroup>
+
+	<!--
+		This project does not import Purview.BuildSdk (see Directory.Build.props), so nothing swaps the
+		generator's unmerged bin assembly for the merged, self-contained one. Resolve the merged generator
+		the same way the package does and hand it to the compiler.
+	-->
+	<Target Name="AddMergedUnionsGenerator" AfterTargets="ResolveProjectReferences" BeforeTargets="CoreCompile">
+		<MSBuild
+			Projects="..\SourceGenerator\SourceGenerator.csproj"
+			Targets="GetPurviewMergedAnalyzerFile"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_UnionsMergedGenerator" />
+		</MSBuild>
+		<ItemGroup>
+			<Analyzer Include="@(_UnionsMergedGenerator)" />
+		</ItemGroup>
+	</Target>
+
+	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" />
+		<!-- GeneratorBenchmarks constructs a CSharpCompilation and runs UnionsSourceGenerator directly. -->
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	</ItemGroup>
+</Project>

@@ -1,5 +1,8 @@
+- [Home](Home.md)
 - [Getting Started](Getting-Started.md)
 - [Union Design](Union-Design.md)
 - [Diagnostics](Diagnostics.md)
 - [Interop](Interop.md)
 - [Trimming and AOT](Trimming-AOT.md)
+- [Performance](Performance.md)
+- [Release Flow](Release-Flow.md)
