@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!--
+			The repository's testing set (net10.0 and net11.0). Unlike a repository that declares union
+			syntax directly, these tests declare unions through [GenerateUnion], so the net10.0 leg is
+			exercised against the generator's internal polyfills and the net11.0 leg against the BCL types.
+		-->
+		<IsPackable>false</IsPackable>
+		<Title>Purview Unions Source Generator Unit Tests</Title>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Unions\Unions.csproj" />
+		<!-- Runs the generator on this project's own generated-union declarations. -->
+		<ProjectReference
+			Include="..\..\src\SourceGenerator\SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+		<!-- The code fix ships as a separate Roslyn component, so tests instantiate it directly. -->
+		<ProjectReference Include="..\..\src\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+			The harness layer. The BuildSdk adds the plain reference to the generator project (the test
+			project's target project, resolved by name), which is what makes UnionsSourceGenerator and the
+			analyzer available to the TUnit test bases.
+		-->
+		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
+		<!-- The Workspaces layer, used by the AdhocWorkspace in the code-fix fallback test. -->
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!--
+			This component is packed into the Purview.Unions package, not published as its own package: the
+			SDK only treats a project as packable when its own project file declares IsPackable as true, so
+			leaving the declaration off keeps it as an analyzer-only project whose merged assembly
+			Purview.Unions packs under analyzers/dotnet/cs.
+		-->
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<!--
+			A Roslyn component must target netstandard2.0 so any compiler host (including older SDKs and
+			Visual Studio) can load it, and so no dependency file is required next to the analyzer.
+		-->
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Title>Purview Unions Source Generator</Title>
+		<Description>.NET source generator that emits the C# 15 non-boxing custom-union shape for [GenerateUnion] declarations, so value-type union cases are never boxed by construction or pattern matching.</Description>
+		<PackageTags>source-generator;unions;union;csharp-15;net10;net11;boxing;purview;</PackageTags>
+		<!--
+			The generator reads this compiler-visible MSBuild property to allow consumers to turn it off.
+			Purview.Unions ships the same declaration as buildTransitive/Purview.Unions.props so
+			PackageReference consumers receive it.
+		-->
+		<UnionsSourceGeneratorDisableProperty>DisableUnionsSourceGenerator</UnionsSourceGeneratorDisableProperty>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+		<PackageReference Include="Purview.SourceGeneratorFramework" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+			Declares the one property this generator reads from build configuration. The framework's
+			PSGF0003 validation fails the build when a declared generator-read property is not
+			compiler-visible.
+		-->
+		<PurviewGeneratorVisibleProperty Include="$(UnionsSourceGeneratorDisableProperty)" />
+		<CompilerVisibleProperty Include="$(UnionsSourceGeneratorDisableProperty)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+			The generator reports diagnostics (UNI9000 itself, and the analyzer reports the UNI0001–UNI0015
+			rules), so the compiler's release-tracking analyzer (RS2008) requires the rule catalogue to be
+			declared in an AnalyzerReleases file.
+		-->
+		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+			The code fix ships in the same package as the generator. Purview.Unions packs this component's
+			merged analyzer and the code fix separately under analyzers/dotnet/cs, so both are delivered to
+			consumers. The reference does not produce a compile-time dependency, and the code-fix project
+			does not reference this one, so no reference cycle can form and the Workspaces layer stays out of
+			this component's dependencies.
+		-->
+		<ProjectReference
+			Include="..\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+	</ItemGroup>
+</Project>

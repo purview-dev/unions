@@ -1,0 +1,87 @@
+<Project>
+	<PropertyGroup>
+		<NamespacePrefix>Purview.Unions</NamespacePrefix>
+
+		<!--
+			.NET 10 and .NET 11. .NET 10 is the current long-term line and .NET 11 is where the union
+			work lands. Targeting both means adopting the package does not force a runtime upgrade.
+			.NET 8 and .NET 9 are deliberately not targeted: both are close to end of support.
+
+			That is exactly Purview.BuildSdk's 'Supported' set, so the list is selected rather than
+			spelled out here: a runtime lifecycle change becomes an SDK bump instead of an edit in this
+			file.
+		-->
+		<PurviewTargetFrameworkSet>Supported</PurviewTargetFrameworkSet>
+
+		<!--
+			Installed skills live in the universal .agents/skills/ folder only, and are committed. The
+			SDK's default (*) would make InstallPurviewSkills write a copy into every agent's folder.
+		-->
+		<PurviewSkillsAgents>universal</PurviewSkillsAgents>
+		<LangVersion>preview</LangVersion>
+
+		<!--
+			EnablePreviewFeatures is deliberately NOT set.
+
+			Setting it emits [assembly: RequiresPreviewFeatures] into every shipped assembly, which
+			makes CA2252 (error severity by default) fire on every member a consumer touches. It is
+			also unnecessary: a custom union is a language-level pattern and needs only
+			LangVersion=preview. Do not reintroduce this property without re-reading
+			docs/wiki/Getting-Started.md, which documents the distinction.
+		-->
+
+		<!--
+			These packages are deliberately dependency-light: no telemetry generator, no
+			Microsoft.Extensions telemetry abstractions. Consumers opt into telemetry in their own host.
+		-->
+		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
+	</PropertyGroup>
+
+	<Import Sdk="Purview.BuildSdk" Project="Sdk.props" />
+
+	<ItemGroup>
+		<NamespaceRemoveSuffix Remove="SourceGenerator" />
+		<NamespaceRemoveSuffix Remove="CodeFixes" />
+		<NamespaceRemoveSuffix Remove="Analyzers" />
+	</ItemGroup>
+
+	<!--
+		Package metadata lives after the SDK import so it can use SDK-provided values such as
+		$(CurrentYear). Each packable project opts in with <IsPackable>true</IsPackable> in its own
+		project file, because the SDK reads that declaration from the project file text.
+
+		PurviewProjectUrl/PurviewDocsUrl are the site's project and documentation pages for this
+		repository, matching the other purview-dev repos; PackageProjectUrl points at the project page
+		rather than the repository.
+	-->
+	<PropertyGroup Label="Purview site URL metadata">
+		<PurviewHomepage>https://purview.dev/</PurviewHomepage>
+		<PurviewProjectUrl>$(PurviewHomepage)projects/unions/</PurviewProjectUrl>
+		<PurviewDocsUrl>$(PurviewHomepage)docs/unions/</PurviewDocsUrl>
+	</PropertyGroup>
+
+	<PropertyGroup Label="NuGet package metadata">
+		<Authors>Kieron Lanning</Authors>
+		<Company>Purview-Dev</Company>
+		<Copyright>Copyright © $(CurrentYear) Purview-Dev</Copyright>
+		<RepositoryUrl>https://github.com/purview-dev/unions.git</RepositoryUrl>
+		<PackageProjectUrl>$(PurviewProjectUrl)</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<PackageIcon>purview-logo-light.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+	<!--
+		The package icon is packed at the package root (the SDK's Sdk/ convention), so the same asset
+		is reused by every packable project without duplicating it in each project folder.
+	-->
+	<ItemGroup Label="NuGet package assets" Condition="'$(IsPackable)' == 'true'">
+		<None
+			Include="$(MSBuildThisFileDirectory)../assets/images/purview-logo-light.png"
+			Link="Sdk\purview-logo-light.png"
+		/>
+	</ItemGroup>
+</Project>

@@ -1,0 +1,26 @@
+<Solution>
+	<Folder Name="/Solution Items/">
+		<File Path="../.editorconfig" />
+		<File Path="../Directory.Packages.props" />
+		<File Path="../global.json" />
+		<File Path="../Justfile" />
+		<File Path="../nuget.config" />
+		<File Path="../package.json" />
+		<File Path="../purview-build.json" />
+		<File Path="Directory.Build.props" />
+		<File Path="Directory.Build.targets" />
+	</Folder>
+	<Folder Name="/src/">
+		<Project Path="src/Unions/Unions.csproj" />
+		<Project Path="src/SourceGenerator/SourceGenerator.csproj" />
+		<Project Path="src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj" />
+	</Folder>
+	<Folder Name="/src/examples/">
+		<Project Path="src/Examples/Examples.csproj" />
+	</Folder>
+	<Folder Name="/tests/">
+		<Project Path="tests/Unions.UnitTests/Unions.UnitTests.csproj" />
+		<Project Path="tests/SourceGenerator.UnitTests/SourceGenerator.UnitTests.csproj" />
+		<Project Path="tests/Repository.UnitTests/Repository.UnitTests.csproj" />
+	</Folder>
+</Solution>

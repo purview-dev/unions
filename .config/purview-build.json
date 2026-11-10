@@ -1,0 +1,78 @@
+{
+	"Build": {
+		"Solution": "src/Unions.slnx",
+		"TestRoot": "src/tests",
+		"TestPatterns": "*Tests.csproj",
+		"TestProjects": "*Tests*",
+		"TestFilter": "/*/*/*/*"
+	},
+	"PackValidation": {
+		// Explicit because Purview.Build defaults RequiredCompilerFlags to empty. These packages are
+		// release-optimised, and declaring the flag keeps that checked rather than assumed.
+		"RequiredCompilerFlags": [
+			"optimization=release"
+		],
+		// Purview.Unions is a library package and produces a symbol package, so the assembly checks
+		// below apply to it. It also carries the merged source generator and its code fix under
+		// analyzers/dotnet/cs, where no lib folder or symbol package entry exists.
+		"RequireSymbolPackage": true,
+		// RequireExplicitContent defaults to true, so this is the exhaustive declaration of what the
+		// package ships: a package with no rule here, or an entry matching none of its globs, fails.
+		"RequiredContent": {
+			"purview.unions": [
+				"README.md",
+				"analyzers/dotnet/cs/Purview.Unions.SourceGenerator.CodeFixes.dll",
+				"analyzers/dotnet/cs/Purview.Unions.SourceGenerator.dll",
+				"buildTransitive/Purview.Unions.props",
+				"lib/$(TFM)/Purview.Unions.dll",
+				"lib/$(TFM)/Purview.Unions.xml",
+				"purview-logo-light.png"
+			]
+		},
+		// Every package ("*"). RequireExplicitContent already rejects anything RequiredContent does not
+		// declare; these rules hold even if a RequiredContent glob is ever widened. Globs are
+		// Microsoft.Extensions.FileSystemGlobbing patterns: "*" stays within one path segment, "**"
+		// spans any number, including none. scripts/test-pack-validation-rules.ps1 (`just
+		// verify-pack-rules`) proves every rule fails a package.
+		"ForbiddenContent": {
+			"*": [
+				// The generator ships IL-merged, with Purview.SourceGeneratorFramework internalized into
+				// it; a loose copy under analyzers/ means the merge did not run.
+				"analyzers/**/Purview.SourceGeneratorFramework*",
+				// The compiler supplies Roslyn to analyzers; a packed copy would shadow or conflict
+				// with it.
+				"analyzers/**/Microsoft.CodeAnalysis*",
+				// Compiler-host assemblies never appear outside analyzers/: anywhere else NuGet hands
+				// them to the application, which breaks Native AOT, trimming and WebAssembly AOT.
+				"Purview.SourceGeneratorFramework*",
+				"Microsoft.CodeAnalysis*",
+				"lib/**/Purview.SourceGeneratorFramework*",
+				"lib/**/Microsoft.CodeAnalysis*",
+				"ref/**/Purview.SourceGeneratorFramework*",
+				"ref/**/Microsoft.CodeAnalysis*",
+				"runtimes/**/Purview.SourceGeneratorFramework*",
+				"runtimes/**/Microsoft.CodeAnalysis*",
+				"build/**/Purview.SourceGeneratorFramework*",
+				"build/**/Microsoft.CodeAnalysis*",
+				"buildTransitive/**/Purview.SourceGeneratorFramework*",
+				"buildTransitive/**/Microsoft.CodeAnalysis*",
+				"buildMultiTargeting/**/Purview.SourceGeneratorFramework*",
+				"buildMultiTargeting/**/Microsoft.CodeAnalysis*",
+				"tools/**/Purview.SourceGeneratorFramework*",
+				"tools/**/Microsoft.CodeAnalysis*",
+				"content/**/Purview.SourceGeneratorFramework*",
+				"content/**/Microsoft.CodeAnalysis*",
+				"contentFiles/**/Purview.SourceGeneratorFramework*",
+				"contentFiles/**/Microsoft.CodeAnalysis*",
+				// The generator and its code fix run only inside the compiler, so they ship under
+				// analyzers/ alone: under lib/, ref/ or runtimes/ every application would load them.
+				"lib/**/Purview.Unions.SourceGenerator*",
+				"ref/**/Purview.Unions.SourceGenerator*",
+				"runtimes/**/Purview.Unions.SourceGenerator*"
+			]
+		}
+	},
+	"Release": {
+		"Mode": "None"
+	}
+}

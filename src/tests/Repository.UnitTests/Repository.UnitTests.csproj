@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!--
+			Pinned rather than taking the repository's multi-targeted set. These tests assert something about
+			the repository itself — its skills/ folder and its build configuration — not about the runtime's
+			reach, so running them once is the whole job, and Purview.Skills.Testing ships net10.0 only.
+		-->
+		<TargetFramework>net10.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+		<Title>Purview Unions Repository Unit Tests</Title>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- The Agent Skills conformance rule set, shipped by Purview.Skills.Testing. -->
+		<PackageReference Include="Purview.Skills.Testing" />
+	</ItemGroup>
+</Project>

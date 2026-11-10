@@ -1,0 +1,18 @@
+{
+	"name": "unions",
+	"version": "0.1.0-prerelease.1",
+	"license": "MIT",
+	"private": true,
+	"homepage": "https://purview.dev/projects/unions/",
+	"bugs": {
+		"url": "https://github.com/purview-dev/unions/issues"
+	},
+	"author": {
+		"name": "Kieron Lanning",
+		"url": "https://kieronlanning.dev/"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/purview-dev/unions.git"
+	}
+}

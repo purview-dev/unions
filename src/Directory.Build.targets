@@ -1,0 +1,18 @@
+<Project>
+	<Import Sdk="Purview.BuildSdk" Project="Sdk.targets" />
+
+	<!--
+		NuGet package validation. Enabled for the packable runtime package so an unintended change to
+		the public API fails `dotnet pack` instead of shipping.
+
+		There is deliberately NO baseline at 0.1.0-prerelease.1: the first stable release has not
+		shipped, so there is nothing to compare against. Validation therefore proves internal
+		consistency only (every target framework exposes the same API) rather than compatibility with a
+		previous version. When the first stable ships, set PackageValidationBaselineVersion to it and
+		bump it with every stable release; the baseline is package-specific, which is why it lives in
+		the repository rather than in Purview.BuildSdk.
+	-->
+	<PropertyGroup Label="NuGet package validation" Condition="'$(IsPackable)' == 'true'">
+		<EnablePackageValidation>true</EnablePackageValidation>
+	</PropertyGroup>
+</Project>

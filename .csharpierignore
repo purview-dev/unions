@@ -1,0 +1,2 @@
+# CSharpier ignores bin/ and obj/ by default. Nothing else in this repository is excluded: the
+# [GenerateUnion] declarations are ordinary C#, unlike a 'union' declaration which CSharpier cannot parse.

@@ -1,0 +1,58 @@
+<Project>
+	<!--
+		Central Package Management. A PackageVersion is a minimum rather than an exact pin: NuGet
+		resolves it unless something in the graph requires higher, so floating versions are not
+		needed and would make a build depend on the day it ran.
+	-->
+	<PropertyGroup Label=".NET Versions">
+		<!--
+			Tracks the target framework rather than being a single value: Purview.Unions
+			multi-targets net10.0 and net11.0, and an 11.x runtime package does not resolve for
+			net10.0 (NU1202). Keep the default on the newest line so a new target framework fails
+			loudly rather than silently resolving something older.
+		-->
+		<DotNetRuntimeVersion>11.0.100</DotNetRuntimeVersion>
+		<DotNetRuntimeVersion Condition="'$(TargetFramework)' == 'net10.0'">10.0.15</DotNetRuntimeVersion>
+	</PropertyGroup>
+	<PropertyGroup Label="Purview Versions">
+		<PurviewSourceGeneratorFrameworkVersion>2.0.0</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSkillsTestingVersion>2.0.0</PurviewSkillsTestingVersion>
+	</PropertyGroup>
+	<PropertyGroup Label="Source Generator Versions">
+		<RoslynVersion>5.9.0</RoslynVersion>
+	</PropertyGroup>
+	<PropertyGroup Label="Testing Versions">
+		<!--
+			Purview.SourceGeneratorFramework.Testing.TUnit 2.0.0 depends on TUnit 1.81.16, so the central
+			version is the framework's floor rather than the older version its siblings pinned.
+		-->
+		<TUnitVersion>1.81.16</TUnitVersion>
+	</PropertyGroup>
+	<ItemGroup Label="Purview">
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework"
+			Version="$(PurviewSourceGeneratorFrameworkVersion)"
+		/>
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
+			Version="$(PurviewSourceGeneratorFrameworkVersion)"
+		/>
+	</ItemGroup>
+	<ItemGroup Label="Source Generators">
+		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
+	</ItemGroup>
+	<ItemGroup Label="Other">
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
+	</ItemGroup>
+	<ItemGroup Label="Testing">
+		<PackageVersion Include="Bogus" Version="35.6.5" />
+		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
+		<PackageVersion Include="TUnit.Assertions" Version="$(TUnitVersion)" />
+		<PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
+		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
+		<!-- The Agent Skills conformance rule set, used by src/tests/Repository.UnitTests. -->
+		<PackageVersion Include="Purview.Skills.Testing" Version="$(PurviewSkillsTestingVersion)" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		Trimming and Native AOT. The runtime contains no reflection over members, no dynamic codegen and
+		no runtime type discovery: Union<T1,T2> stores each case in a typed field and its only runtime
+		metadata use is typeof(T).IsValueType / Nullable.GetUnderlyingType, which are AOT-safe. IsAotCompatible
+		turns on IsTrimmable plus the trim and AOT analyzers, so a regression becomes a build warning here
+		rather than a runtime failure in a consumer's published application.
+
+		The generated members are plain fields, constructors, a switch over a tag and TryGetValue
+		overloads, so they are trim- and AOT-safe for the same reason.
+	-->
+	<PropertyGroup Label="Trimming and Native AOT">
+		<IsAotCompatible>true</IsAotCompatible>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsPackable>true</IsPackable>
+		<Title>Purview Unions</Title>
+		<Description>Dependency-free C# 15 unions that do not box value-type cases: a source generator emits the non-boxing custom-union shape, plus a hand-written Union&lt;T1, T2&gt; for .NET 10 and for projects that do not use a generator.</Description>
+		<PackageTags>unions;union;discriminated-union;csharp-15;net10;net11;source-generator;boxing;purview;</PackageTags>
+		<!--
+			The package carries the source generator and its IDE code fixes under analyzers/dotnet/cs, so a
+			consumer that references Purview.Unions gets the [GenerateUnion] ergonomics without a second
+			PackageReference. The generator is packed from its merged analyzer artifact by the target below
+			rather than through an analyzer ProjectReference on this project: the generator emits members
+			into every compilation it runs on, and running it here would also generate for this library's
+			own [GenerateUnion] usage.
+		-->
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackUnionsSourceGenerator</TargetsForTfmSpecificContentInPackage>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!--
+			Declares the browser as a supported platform. The package is dependency-free and uses no
+			browser-unsupported API, so a Blazor WebAssembly client can consume it.
+		-->
+		<SupportedPlatform Include="browser" />
+	</ItemGroup>
+
+	<!--
+		Packs the self-contained (ILRepack-merged) generator and the code-fix assembly into
+		analyzers/dotnet/cs. The merged generator is produced by the framework's
+		GetPurviewMergedAnalyzerFile target, so the loose Purview.SourceGeneratorFramework.dll never
+		ships; the code fix stays a separate analyzer assembly because it needs the Workspaces layer
+		only the IDE host provides.
+	-->
+	<Target
+		Name="PackUnionsSourceGenerator"
+		Label="Packs the Purview.Unions source generator and code fix under analyzers/dotnet/cs."
+	>
+		<MSBuild
+			Projects="..\SourceGenerator\SourceGenerator.csproj"
+			Targets="GetPurviewMergedAnalyzerFile"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_PurviewUnionsMergedGenerator" />
+		</MSBuild>
+		<MSBuild
+			Projects="..\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj"
+			Targets="Build"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		/>
+		<MSBuild
+			Projects="..\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj"
+			Targets="GetTargetPath"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_PurviewUnionsCodeFixes" />
+		</MSBuild>
+		<ItemGroup Condition="'$(TargetFramework)' == 'net10.0' OR '$(TargetFrameworks)' == ''">
+			<TfmSpecificPackageFile Include="@(_PurviewUnionsMergedGenerator)" PackagePath="analyzers/dotnet/cs/" />
+			<TfmSpecificPackageFile Include="@(_PurviewUnionsCodeFixes)" PackagePath="analyzers/dotnet/cs/" />
+		</ItemGroup>
+	</Target>
+</Project>
