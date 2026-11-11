@@ -45,9 +45,26 @@ $project = Join-Path $repositoryRoot 'src/src/Unions/Unions.csproj'
 $scratch = Join-Path ([System.IO.Path]::GetTempPath()) "unions-consumers-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 $feed = Join-Path $scratch 'feed'
 $failures = [System.Collections.Generic.List[string]]::new()
+$originalNuGetPackages = $env:NUGET_PACKAGES
 
 try {
 	New-Item -ItemType Directory -Force -Path $feed, $PackOutput | Out-Null
+
+	# Purview.Unions deliberately has no ProjectReference to the generator, so packing it restores only
+	# itself. The pack target invokes `GetPurviewMergedAnalyzerFile` on the generator project and
+	# `Build` on the code-fix project through MSBuild, and a project that was never restored has no
+	# package build assets: the framework's targets are not imported and the target does not exist
+	# (MSB4057). Restore both before packing so the gate works on a clean checkout, not only on a
+	# developer machine where an earlier build already restored them.
+	$generator = Join-Path $repositoryRoot 'src/src/SourceGenerator/SourceGenerator.csproj'
+	$codeFixes = Join-Path $repositoryRoot 'src/src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj'
+
+	Write-Host 'Restoring the generator and code-fix projects...' -ForegroundColor Cyan
+	& dotnet restore $generator --nologo
+	if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed for $generator with exit code $LASTEXITCODE." }
+
+	& dotnet restore $codeFixes --nologo
+	if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed for $codeFixes with exit code $LASTEXITCODE." }
 
 	Write-Host "Packing Purview.Unions $version to $feed..." -ForegroundColor Cyan
 	& dotnet pack $project -c $Configuration -o $feed --nologo
@@ -56,7 +73,23 @@ try {
 	$package = Join-Path $feed "Purview.Unions.$version.nupkg"
 	if (-not (Test-Path $package)) { throw "The packed package '$package' was not produced." }
 
+	# The scratch feed is temporary and removed below, so mirror what was packed into PackOutput as well.
+	# The workflow validates these same files with test-pack-validation-rules.ps1 after this script, and a
+	# PackOutput that received nothing made that gate fail on a clean runner even though packing succeeded.
+	Copy-Item $package $PackOutput -Force
+	$symbolPackage = [System.IO.Path]::ChangeExtension($package, '.snupkg')
+	if (Test-Path $symbolPackage) { Copy-Item $symbolPackage $PackOutput -Force }
+
+	# NuGet reuses an extracted package for the same id and version, so an isolated global-packages
+	# folder is what guarantees each consumer tests the package just packed rather than a stale extract
+	# left by an earlier run with the same version.
+	$env:NUGET_PACKAGES = Join-Path $scratch 'packages'
+
 	foreach ($tfm in @('net10.0', 'net11.0')) {
+		# net11.0 gets C# 15 by default in the .NET 11 SDK; net10.0 defaults to C# 14, so its
+		# consumer sets latest to prove the union syntax with the generator's polyfills. Neither
+		# consumer sets preview.
+		$langVersionProperty = if ($tfm -eq 'net10.0') { '<LangVersion>latest</LangVersion>' } else { '' }
 		$consumer = Join-Path $scratch "Consumer.$tfm"
 		New-Item -ItemType Directory -Force -Path $consumer | Out-Null
 
@@ -75,9 +108,14 @@ try {
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>$tfm</TargetFramework>
-		<LangVersion>preview</LangVersion>
+		$langVersionProperty
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Proves the shipped UNI0000/UNI9001 suppressors handle CA1034 and CA1515 on a surface-C union. -->
+		<AnalysisMode>All</AnalysisMode>
+		<WarningsAsErrors>CA1034;CA1515</WarningsAsErrors>
+		<!-- The other all-rules warnings are irrelevant to this gate; CA1034/CA1515 are under test. -->
+		<NoWarn>CA1000;CA1050;CA1815;CA1852</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Purview.Unions" Version="$version" />
@@ -115,11 +153,70 @@ if (empty.HasValue || empty.TryGetValue(out string _))
 	return 1;
 }
 
+Outcome<int> outcome = 9;
+if (!outcome.TryGetValue(out int result) || result != 9)
+{
+	Console.Error.WriteLine($"{Environment.Version}: surface C did not hold the value.");
+	return 1;
+}
+
+Outcome<int> failure = new InvalidOperationException("boom");
+if (!failure.TryGetValue(out Exception? error) || error?.Message != "boom")
+{
+	Console.Error.WriteLine($"{Environment.Version}: surface C did not hold the error.");
+	return 1;
+}
+
+PackedMaybe<int> packedSome = new PackedSome<int>(7);
+if (!packedSome.TryGetValue(out PackedSome<int> packedValue) || packedValue.Value != 7)
+{
+	Console.Error.WriteLine($"{Environment.Version}: internal surface B did not hold the value.");
+	return 1;
+}
+
+PackedMaybe<int> packedNone = new PackedNone();
+if (!packedNone.TryGetValue(out PackedNone _))
+{
+	Console.Error.WriteLine($"{Environment.Version}: internal surface B did not hold None.");
+	return 1;
+}
+
 Console.WriteLine($"{Environment.Version}: {number} (ok)");
 return 0;
 
 [GenerateUnion(typeof(int), typeof(string))]
-public readonly partial struct IntOrString;
+readonly partial struct IntOrString;
+
+readonly record struct PackedSome<T>(T Value);
+
+readonly record struct PackedNone;
+
+[GenerateUnion]
+readonly partial struct PackedMaybe<T>
+{
+	internal static partial PackedMaybe<T> Some(PackedSome<T> value);
+
+	internal static partial PackedMaybe<T> None(PackedNone value);
+}
+
+[GenerateUnion]
+readonly partial struct Outcome<T> : Outcome<T>.IUnionMembers
+{
+	public interface IUnionMembers
+	{
+		static Outcome<T> Create(T? value) => Outcome<T>.CreateCase0(value);
+
+		static Outcome<T> Create(Exception? value) => Outcome<T>.CreateCase1(value);
+
+		object? Value { get; }
+
+		bool HasValue { get; }
+
+		bool TryGetValue(out T value);
+
+		bool TryGetValue(out Exception value);
+	}
+}
 '@ | Set-Content (Join-Path $consumer 'Program.cs') -Encoding utf8
 
 		Push-Location $consumer
@@ -150,6 +247,13 @@ catch {
 	$failures.Add($_.Exception.Message)
 }
 finally {
+	if ($null -ne $originalNuGetPackages) {
+		$env:NUGET_PACKAGES = $originalNuGetPackages
+	}
+	else {
+		Remove-Item Env:NUGET_PACKAGES -ErrorAction SilentlyContinue
+	}
+
 	if ($KeepArtifacts) {
 		Write-Host "Scratch consumers kept at $scratch" -ForegroundColor Yellow
 	}

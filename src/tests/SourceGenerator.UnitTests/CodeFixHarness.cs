@@ -29,6 +29,23 @@ static class CodeFixHarness
 	/// <param name="descriptor">The descriptor whose id the synthetic diagnostic carries.</param>
 	/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
 	/// <returns>The rewritten source, or the original source when no fix was offered.</returns>
+	public static Task<string> ApplyAsync<TProvider>(
+		string source,
+		DiagnosticDescriptor descriptor,
+		CancellationToken cancellationToken
+	)
+		where TProvider : CodeFixProvider, new() =>
+		ApplyAsync<TProvider>(source, descriptor, targetTypeName: null, cancellationToken);
+
+	/// <summary>
+	/// Applies the first fix offered by <typeparamref name="TProvider"/> to the named type declaration.
+	/// </summary>
+	/// <typeparam name="TProvider">The code-fix provider to run.</typeparam>
+	/// <param name="source">The source containing the union declaration.</param>
+	/// <param name="descriptor">The descriptor whose id the synthetic diagnostic carries.</param>
+	/// <param name="targetTypeName">The simple name of the declaration to target, or null for the first.</param>
+	/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+	/// <returns>The rewritten source, or the original source when no fix was offered.</returns>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage(
 		"Maintainability",
 		"CA1506:Avoid excessive class coupling",
@@ -37,10 +54,13 @@ static class CodeFixHarness
 	public static async Task<string> ApplyAsync<TProvider>(
 		string source,
 		DiagnosticDescriptor descriptor,
+		string? targetTypeName,
 		CancellationToken cancellationToken
 	)
 		where TProvider : CodeFixProvider, new()
 	{
+		// The pinned Roslyn 5.9.0 package's Latest is C# 14; parse under Preview so the C# 15 union syntax
+		// is available. The SDK compiler that builds consumers accepts it with LangVersion=latest.
 		CSharpParseOptions parseOptions = new(LanguageVersion.Preview);
 		CSharpCompilationOptions compilationOptions = new(
 			OutputKind.DynamicallyLinkedLibrary,
@@ -51,10 +71,18 @@ static class CodeFixHarness
 		var tree = CSharpSyntaxTree.ParseText(source, parseOptions, cancellationToken: cancellationToken);
 		var compilation = CSharpCompilation.Create("CodeFixTest", [tree], references, compilationOptions);
 
-		var declaration = (await tree.GetRootAsync(cancellationToken))
+		var declarations = (await tree.GetRootAsync(cancellationToken))
 			.DescendantNodes()
-			.OfType<TypeDeclarationSyntax>()
-			.First();
+			.OfType<TypeDeclarationSyntax>();
+		var declaration = targetTypeName is null
+			? declarations.FirstOrDefault()
+			: declarations.FirstOrDefault(type =>
+				string.Equals(type.Identifier.ValueText, targetTypeName, StringComparison.Ordinal)
+			);
+
+		if (declaration is null)
+			return source;
+
 		var diagnostic = Diagnostic.Create(descriptor, declaration.Identifier.GetLocation());
 
 		var projectId = ProjectId.CreateNewId();
@@ -105,9 +133,7 @@ static class CodeFixHarness
 		foreach (var path in trusted)
 			builder.Add(MetadataReference.CreateFromFile(path));
 
-		builder.Add(
-			MetadataReference.CreateFromFile(typeof(global::Purview.Unions.GenerateUnionAttribute).Assembly.Location)
-		);
+		builder.Add(MetadataReference.CreateFromFile(typeof(GenerateUnionAttribute).Assembly.Location));
 
 		return builder.ToImmutable();
 	}

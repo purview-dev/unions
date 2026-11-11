@@ -9,7 +9,7 @@ whether it can emit and reports only `UNI9000`. A rule is reported once.
 | `UNI0002` | Error | Unsupported declaration kind (interface, enum, static/abstract class, `ref struct`) |
 | `UNI0003` | Error | No case list was found |
 | `UNI0004` | Error | Duplicate case type |
-| `UNI0005` | Error | A case type is not public |
+| `UNI0005` | Error | A case type is less accessible than the union |
 | `UNI0006` | Error | More cases than a `ushort` tag can address |
 | `UNI0007` | Error | `[Union]` is required but missing (fallback path only) |
 | `UNI0008` | Error | Two case types are implicitly convertible |
@@ -25,6 +25,11 @@ whether it can emit and reports only `UNI9000`. A rule is reported once.
 
 Every error blocks its union: the generated constructors, storage and access members are one coherent shape,
 so there is no partial output. `UNI0015` is the only warning and does not block.
+
+`UNI0000` and `UNI9001` are **suppression descriptors**, not reported rules. `UNI0000` suppresses `CA1034`
+(nested types should not be visible) and `UNI9001` suppresses `CA1515` (public types should be internal) on a
+union's public nested `IUnionMembers` provider, which the C# union contract requires. Add either id to
+`NoWarn` to turn that suppression off.
 
 ## Details
 
@@ -47,10 +52,12 @@ public single-parameter constructors.
 Each case type appears once. A nullable value type and its underlying type are the same case (`int?` and
 `int`).
 
-### `UNI0005` — case type not public
+### `UNI0005` — case type less accessible than the union
 
-Every union creation member must be public, and a public constructor cannot take a less accessible parameter
-type. A nested case type must be public all the way up its containers too.
+A case type must be at least as accessible as the union. A public union's creation members are public API, so
+its case types must be public all the way up their containers. An internal union's creation members are
+effectively internal, so an internal case type is enough. The code fix adds `public` to the case type and its
+containing types.
 
 ### `UNI0006` — too many cases
 

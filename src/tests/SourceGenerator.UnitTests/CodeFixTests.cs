@@ -16,6 +16,9 @@ public sealed class CodeFixTests
 		await Assert
 			.That(UnionsDiagnosticIds.UnionAttributeRequired)
 			.IsEqualTo(DiagnosticLibrary.UnionAttributeRequired.Id);
+		await Assert
+			.That(UnionsDiagnosticIds.UnionCaseTypeNotAccessible)
+			.IsEqualTo(DiagnosticLibrary.InaccessibleCaseType.Id);
 	}
 
 	[Test]
@@ -37,6 +40,58 @@ public sealed class CodeFixTests
 		);
 
 		await Assert.That(fixedSource).Contains("partial struct IntOrString");
+	}
+
+	[Test]
+	public async Task UNI0005_MakesTheCaseTypePublic(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal readonly record struct Hidden(int Value);
+
+			[GenerateUnion(typeof(Hidden), typeof(string))]
+			public readonly partial struct HiddenOrString;
+			""";
+
+		var fixedSource = await CodeFixHarness.ApplyAsync<MakeCaseTypePublicCodeFixProvider>(
+			source,
+			DiagnosticLibrary.InaccessibleCaseType,
+			"Hidden",
+			cancellationToken
+		);
+
+		await Assert.That(fixedSource).Contains("public readonly record struct Hidden");
+	}
+
+	[Test]
+	public async Task UNI0005_MakesContainingTypesPublic(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal class Container
+			{
+				internal readonly record struct Hidden(int Value);
+			}
+
+			[GenerateUnion(typeof(Container.Hidden), typeof(string))]
+			public readonly partial struct HiddenOrString;
+			""";
+
+		var fixedSource = await CodeFixHarness.ApplyAsync<MakeCaseTypePublicCodeFixProvider>(
+			source,
+			DiagnosticLibrary.InaccessibleCaseType,
+			"Hidden",
+			cancellationToken
+		);
+
+		await Assert.That(fixedSource).Contains("public class Container");
+		await Assert.That(fixedSource).Contains("public readonly record struct Hidden");
 	}
 
 	[Test]

@@ -47,6 +47,10 @@ keeps the two in sync.
 `UNI0001`–`UNI0016` and `UNI9000`; see `docs/wiki/Diagnostics.md`. `AnalyzerReleases.Unshipped.md` is the
 release-tracked catalogue (RS2008).
 
+`UNI0000` and `UNI9001` are suppression descriptors, not rules: the assembly also ships
+`UnionMembersNestingSuppressor`, which suppresses `CA1034` and `CA1515` on a union's public nested
+`IUnionMembers` provider.
+
 ## Tests
 
 `src/tests/SourceGenerator.UnitTests` contains the Phase 0 compiler experiments, generation and determinism

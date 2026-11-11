@@ -19,6 +19,7 @@
 		Purview.SourceGeneratorFramework*
 		Microsoft.CodeAnalysis*
 		Purview.Unions.SourceGenerator*                  (the generator and Purview.Unions.SourceGenerator.CodeFixes)
+		Purview.Telemetry.SourceGenerator*               (the telemetry generator and refactorings)
 
 	A path that does not exist, or that holds no files, fails too: a scan of nothing proves nothing.
 
@@ -59,6 +60,7 @@ $forbiddenNames = @(
 	'Purview.SourceGeneratorFramework'
 	'Microsoft.CodeAnalysis'
 	'Purview.Unions.SourceGenerator'
+	'Purview.Telemetry.SourceGenerator'
 )
 
 $forbiddenContent = [regex]::new(

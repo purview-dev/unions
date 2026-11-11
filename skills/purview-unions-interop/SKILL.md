@@ -21,30 +21,26 @@ is why surfaces B and C exist, and why surface A (`typeof` only) is invisible to
 
 ## Purview.Results
 
-`[GenerateResult]` requires `ITypeSymbol.IsUnion` and reads the union's public single-parameter
-constructors. For a union generated here:
+`[GenerateResult]` recognises a `[GenerateUnion]` target by metadata identity and reads its source-visible
+case list instead of generated output. Surface A (`typeof` list), B (partial factory signatures) and C
+(`IUnionMembers` provider) all work; no `[Union]` attribute or constructors need to be written by hand. A
+`[GenerateUnion]` target with no source-visible case list is `RSG1001`. Surface C remains the portable route
+when another generator also needs the case list.
 
-- the `[Union]` attribute is emitted by this generator, so Results' generator cannot see it;
-- the constructors are generated, so Results cannot see them either.
-
-A Results error union therefore needs `[Union]` and the constructor set written in source. **This is a
-known gap** and a follow-up in `purview-dev/results`: `[GenerateResult]` should read the source case list
-(the `typeof` list, partial factories or a provider) instead of the generated constructors.
-
-The integration test is marked `Skip` with the follow-up link; do not work around it by hand-writing the
-constructors, because that is `UNI0012`/`UNI0014`.
+The two-generator integration test is a follow-up in `purview-dev/results` because `Purview.Unions` is not on
+a CI-safe package feed yet. Do not work around it by hand-writing the constructors, because that is
+`UNI0012`/`UNI0014`.
 
 ## Purview.Telemetry
 
-The telemetry generator's `UnionHelpers` prefers a nested `IUnionMembers` provider's `Create` methods,
-then falls back to public constructors, and treats the non-boxing pattern as present when `HasValue` and
-one `TryGetValue` per case exist.
-
-- **Surface C works today**: the provider is in source, and the union implements the required
-  `HasValue`/`TryGetValue` members.
-- **Surface A does not**: the cases live only in the emitted constructors.
-- A telemetry parameter typed as `Purview.Unions.Union<T1, T2>` is not detected as a union unless the
-  `net11.0` asset's `[Union]` is visible — it is, because it is compiled into the package assembly.
+`Purview.Telemetry.SourceGenerator` 6.0.0 recognises a `[GenerateUnion]` target and reads its source-visible
+case list (the `typeof` list, partial factories, a nested `IUnionMembers` provider, then source-visible
+constructors). It emits the accessor against the generated `HasValue`/`TryGetValue` members, so surface A/B/C
+unions are unwrapped to their case value without boxing the union. `just test-telemetry-integration` proves
+both generators in one compilation from the packages. A `[GenerateUnion]` target with no source-visible case
+list is not treated as a union by Telemetry; the unions generator reports `UNI0003`. A telemetry parameter
+typed as `Purview.Unions.Union<T1, T2>` is visible as a union on `net11.0`, where the package assembly carries
+`[Union]`.
 
 ## ZodSharp
 
@@ -75,12 +71,13 @@ A trimmed or Native AOT application can use any surface. On .NET 10 the generato
 
 | | `net10.0` | `net11.0` |
 | --- | --- | --- |
-| Compiler | C# 15 (`LangVersion=preview`) | C# 15 |
+| Compiler | C# 15 (`LangVersion=latest`) | C# 15 (the default) |
 | `UnionAttribute`/`IUnion` | internal polyfills emitted by the generator | BCL types |
 | `Union<T1, T2>` | plain struct with the same API | also `[Union]`/`IUnion`; exhaustive and non-boxing patterns |
 | Generated unions | compiler unions via the polyfill | compiler unions via the BCL |
 
-`LangVersion=preview` is the only switch needed. Do not set `EnablePreviewFeatures`: it emits
+A `net11.0` project needs no `LangVersion`; a `net10.0` project sets `<LangVersion>latest</LangVersion>`
+because its default is C# 14. `preview` is not required. Do not set `EnablePreviewFeatures`: it emits
 `RequiresPreviewFeatures` assembly-wide and makes `CA2252` fire on every member a consumer touches.
 
 ## Checklist

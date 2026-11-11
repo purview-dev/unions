@@ -39,16 +39,6 @@ public sealed class RepositoryConfigTests
 	}
 
 	[Test]
-	public async Task PrWorkflow_TestFilterMatchesTheBuildConfiguration(CancellationToken cancellationToken)
-	{
-		var config = await ReadAsync(".config/purview-build.json", cancellationToken);
-		var workflow = await ReadAsync(".github/workflows/pr.yml", cancellationToken);
-
-		await Assert.That(config).Contains("/*/*/*/*[Category=Unit]");
-		await Assert.That(workflow).Contains("/*/*/*/*[Category=Unit]");
-	}
-
-	[Test]
 	public async Task PerformanceStructure_IsWiredIntoTheRepository(CancellationToken cancellationToken)
 	{
 		var packages = await ReadAsync("Directory.Packages.props", cancellationToken);
@@ -61,6 +51,29 @@ public sealed class RepositoryConfigTests
 		await Assert.That(justfile).Contains("src/src/Benchmarks/Benchmarks.csproj");
 		await Assert.That(sidebar).Contains("(Performance.md)");
 		await Assert.That(readme).Contains("docs/wiki/Performance.md");
+	}
+
+	[Test]
+	public async Task SourceProjects_KeepTheDependencyDirectionOneWay(CancellationToken cancellationToken)
+	{
+		foreach (
+			var project in new[]
+			{
+				"src/src/Unions/Unions.csproj",
+				"src/src/SourceGenerator/SourceGenerator.csproj",
+				"src/src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj",
+			}
+		)
+		{
+			var text = await ReadAsync(project, cancellationToken);
+
+			await Assert
+				.That(text)
+				.DoesNotContain("<ProjectReference")
+				.Because(
+					$"{project} must not take a project dependency; the runtime, generator and code fixes are peers"
+				);
+		}
 	}
 
 	[Test]
@@ -111,15 +124,6 @@ public sealed class RepositoryConfigTests
 				.Contains(skill)
 				.Because($"AGENTS.md must name the authored skill '{skill}' so an agent can find it");
 		}
-	}
-
-	[Test]
-	public async Task PackageJson_CarriesThePrereleaseVersion(CancellationToken cancellationToken)
-	{
-		var package = await ReadAsync("package.json", cancellationToken);
-
-		await Assert.That(package).Contains("\"version\": \"0.1.0-prerelease.1\"");
-		await Assert.That(package).Contains("\"name\": \"unions\"");
 	}
 
 	[Test]

@@ -66,8 +66,9 @@ public readonly partial struct Option<T>
 Option<int> some = new Some<int>(42);
 ```
 
-A nested `IUnionMembers` provider is the alternative when another generator must see the case list; see
-[Union Design](Union-Design.md).
+A nested `IUnionMembers` provider is the alternative when another generator must see the case list; the
+provider is public, so the package's `UNI0000` and `UNI9001` suppressors handle the resulting `CA1034` and
+`CA1515`. See [Union Design](Union-Design.md).
 
 ## No generator
 
@@ -80,9 +81,11 @@ if (value.TryGetValue(out int number)) { }
 
 ## Requirements
 
-- The .NET 11 SDK (C# 15) with `LangVersion=preview` in the project that declares a union.
+- The .NET 11 SDK (C# 15, GA).
 - Target `net10.0` or `net11.0`.
-- Do not set `EnablePreviewFeatures`; `LangVersion=preview` is the only switch needed.
+- A `net11.0` project gets C# 15 by default, so no `LangVersion` is needed. A `net10.0` project defaults to
+  C# 14, so set `<LangVersion>latest</LangVersion>` in the project that declares a union.
+- Do not set `EnablePreviewFeatures`; `LangVersion=latest` (and only on `net10.0`) is the only switch needed.
 
 On `net10.0` the generator emits internal `[Embedded]` polyfills for `UnionAttribute`/`IUnion`. On `net11.0`
 the BCL types are used and no polyfill is emitted.

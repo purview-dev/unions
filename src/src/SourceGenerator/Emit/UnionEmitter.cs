@@ -72,39 +72,36 @@ static class UnionEmitter
 				: [],
 		};
 
-		writer.Type(
-			options,
-			body =>
+		writer.Type(options, body =>
+		{
+			if (!model.EmitMembers)
 			{
-				if (!model.EmitMembers)
-				{
-					body.Comment(
-						"The declaration is hand-written: its constructors and access members already exist, so only the compiler attribute is generated."
-					);
+				body.Comment(
+					"The declaration is hand-written: its constructors and access members already exist, so only the compiler attribute is generated."
+				);
 
-					return;
-				}
-
-				EmitFields(body, model);
-				EmitConstructors(body, model);
-				EmitValue(body, model);
-				EmitHasValue(body, model);
-				EmitTryGetValue(body, model);
-				EmitFactories(body, model, reference);
-				EmitProviderFactories(body, model, reference);
+				return;
 			}
-		);
+
+			EmitFields(body, model);
+			EmitConstructors(body, model);
+			EmitValue(body, model);
+			EmitHasValue(body, model);
+			EmitTryGetValue(body, model);
+			EmitFactories(body, model, reference);
+			EmitProviderFactories(body, model, reference);
+		});
 	}
 
 	static void EmitFields(CodeWriter writer, UnionModel model)
 	{
 		foreach (var unionCase in model.Cases)
 		{
-			writer.Field(
-				unionCase.FieldName,
-				unionCase.StorageType,
-				TypeDeclarationAccessibility.Private,
-				options => options with { IsReadOnly = true }
+			writer.Field(unionCase.FieldName, unionCase.StorageType, TypeDeclarationAccessibility.Private, options =>
+				options with
+				{
+					IsReadOnly = true,
+				}
 			);
 		}
 
@@ -203,7 +200,7 @@ static class UnionEmitter
 
 		writer.Property(
 			PropertyLibrary.ValueMemberName,
-			TypeIdentity.Create<object>().MakeNullable(),
+			TypeIdentity.Create<object>().MakeNullable(writer),
 			TypeDeclarationAccessibility.Public,
 			body => body.Return($"{PropertyLibrary.TagFieldName} switch {{ {arms}_ => null }}"),
 			null
@@ -336,7 +333,7 @@ static class UnionEmitter
 					if (unionCase.RequiresNullCheck)
 						body.IfBlock($"{PropertyLibrary.ValueParameterName} is null", b => b.Return("default"));
 
-					List<string> arguments = new(model.Cases.Count + 1);
+					List<string> arguments = [with(model.Cases.Count + 1)];
 					foreach (var other in model.Cases)
 					{
 						arguments.Add(other.Tag == unionCase.Tag ? ActiveValueExpression(unionCase) : "default");

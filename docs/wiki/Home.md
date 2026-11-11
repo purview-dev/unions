@@ -12,6 +12,7 @@ not use a generator.
 | [Interop](Interop.md) | Results, Telemetry, ZodSharp, JSON, trimming and AOT |
 | [Trimming and AOT](Trimming-AOT.md) | why the generated shape and `Union<T1, T2>` are trim- and AOT-safe |
 | [Performance](Performance.md) | the BenchmarkDotNet suite, measured results and what an allocation means |
+| [Agent Skills](Agent-Skills.md) | the published agent skills and when to load each one |
 | [Release Flow](Release-Flow.md) | the PR and release gates, pack validation and how a version ships |
 
 The package targets `net10.0` and `net11.0`. On `net10.0` the generator emits internal `[Embedded]` polyfills for

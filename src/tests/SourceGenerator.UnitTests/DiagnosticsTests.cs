@@ -197,6 +197,75 @@ public sealed class DiagnosticsTests
 	}
 
 	[Test]
+	public async Task UNI0005_GivenInternalCaseTypeInInternalUnion_IsNotReported(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal readonly record struct Hidden(int Value);
+
+			[GenerateUnion(typeof(Hidden), typeof(string))]
+			internal readonly partial struct HiddenOrString;
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+
+		await Assert.That(result.Diagnostics.Select(static diagnostic => diagnostic.Id)).DoesNotContain("UNI0005");
+	}
+
+	[Test]
+	public async Task UNI0005_GivenInternalCaseTypesInInternalGenericUnion_IsNotReported(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal readonly record struct Some<T>(T Value);
+
+			internal readonly record struct None;
+
+			[GenerateUnion]
+			internal readonly partial struct Option<T>
+			{
+				internal static partial Option<T> Some(Some<T> value);
+
+				internal static partial Option<T> None(None value);
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+
+		await Assert.That(result.Diagnostics.Select(static diagnostic => diagnostic.Id)).DoesNotContain("UNI0005");
+	}
+
+	[Test]
+	public async Task UNI0005_GivenInternalCaseTypeInPublicGenericUnion_IsReported(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal readonly record struct Some<T>(T Value);
+
+			[GenerateUnion]
+			public readonly partial struct Option<T>
+			{
+				internal static partial Option<T> Some(Some<T> value);
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+
+		await Assert.That(result).HasDiagnostic("UNI0005");
+	}
+
+	[Test]
 	public async Task UNI0005_GivenPublicCaseType_IsNotReported(CancellationToken cancellationToken)
 	{
 		const string source = """

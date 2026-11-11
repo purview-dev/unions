@@ -23,7 +23,7 @@ The repository builds `Purview.Unions`: a dependency-free .NET package that gene
 | `src/tests/SourceGenerator.UnitTests/` | generation, the compiler experiments, diagnostics, code fixes, cache tests |
 | `src/tests/Repository.UnitTests/` | skills conformance, build configuration and agent instructions |
 | `docs/wiki/` | design, evidence and follow-ups |
-| `skills/` | the three skills published to consumers |
+| `skills/` | the four skills published to consumers |
 
 Do not add a second implementation of a union rule. Discovery, validation and the diagnostic catalogue
 live once in `src/src/SourceGenerator`; the analyzer and the generator both consume them.
@@ -84,14 +84,17 @@ The compiler's contract is not ours to redefine. Every generated union must sati
 ## Diagnostics rules
 
 - Prefix `UNI`. Every reported rule is in `AnalyzerReleases.Unshipped.md` (RS2008). Suppression
-  descriptors are not release-tracked.
+  descriptors are not release-tracked. `UNI0000` and `UNI9001` are suppression descriptors, not rules: they
+  suppress `CA1034` and `CA1515` on a union's public nested `IUnionMembers` provider.
 - The blocking policy lives beside the descriptors (`DiagnosticLibrary.IsBlocking`); there is one policy
   for both hosts.
 - A rule is reported once. The analyzer reports per-target findings; the generator applies the same
   findings to `GeneratorResult.ShouldProcess` and reports only `UNI9000`.
 - Do not suppress warnings with `NoWarn`, `#pragma warning disable` or `SuppressMessage` in product code.
-  The only suppression kept repo-wide is `Purview.BuildSdk`'s `PDS0006` for `CA1815` on a union
-  declaration, plus the deliberate `RSEXPERIMENTAL006` at the `ITypeSymbol.IsUnion` call in a test.
+  The only suppressions kept repo-wide are `Purview.BuildSdk`'s `PDS0006` for `CA1815` on a union
+  declaration, this package's `UNI0000` `DiagnosticSuppressor` for `CA1034` and `UNI9001` for `CA1515` on a
+  union's `IUnionMembers` provider, and the deliberate `RSEXPERIMENTAL006` at the `ITypeSymbol.IsUnion` call
+  in a test.
 
 ## Packaging rules
 
@@ -108,14 +111,16 @@ The compiler's contract is not ours to redefine. Every generated union must sati
 ## Skills rules
 
 - Authored skills live in `skills/<name>/SKILL.md` and carry the `purview-unions` prefix.
-- Never install them into `.agents/skills/`; `Repository.UnitTests` enforces that. Never add `.claude/` or
+- Installed upstream skills live in `.agents/skills/` only and are recorded in `skills-lock.json`; the
+  authored skills are never copied there. `Repository.UnitTests` enforces both. Never add `.claude/` or
   `CLAUDE.md`.
-- `skills-lock.json` records the installed set; `just skills-update` restores it.
+- `just skills-check` reports drift; `just skills-update` restores the recorded set.
 
-The three published skills, authored for consumers of the package:
+The four published skills, authored for consumers of the package:
 
 | Skill | Answers |
 | --- | --- |
+| `purview-unions-quickstart` | install, compiler requirements, a first union, and the no-generator fallback |
 | `purview-unions-modelling` | which declaration surface to use, how to model cases, and why `Value` boxes while patterns do not |
 | `purview-unions-diagnostics` | what a `UNI0001`–`UNI0016`/`UNI9000` finding means and how to fix it |
 | `purview-unions-interop` | Results, Telemetry, ZodSharp, JSON, trimming and AOT, including the follow-ups |
@@ -133,7 +138,7 @@ The three published skills, authored for consumers of the package:
 ## Performance rules
 
 - The benchmark project is `src/src/Benchmarks`; run it with `just perf-tests` (Release, net10.0) or
-  `just perf-tests -f net11.0`. Never benchmark a Debug build.
+  `just perf-tests-net11`. Never benchmark a Debug build.
 - Benchmarks are evidence for the README's allocation claims, not a CI gate: shared-runner timings are
   noise. Add or change a suite when a hot path or a claim changes, and record the results in
   `docs/wiki/Performance.md`.
@@ -147,13 +152,16 @@ The three published skills, authored for consumers of the package:
 | `just restore` | restore the solution |
 | `just build` | build the solution |
 | `just test` | run every test project on both target frameworks |
-| `just perf-tests` | run the BenchmarkDotNet suite (Release; `-f net11.0` for .NET 11) |
+| `just perf-tests` | run the BenchmarkDotNet suite on .NET 10 (Release) |
+| `just perf-tests-net11` | run the BenchmarkDotNet suite on .NET 11 (Release) |
 | `just lint-check` / `just lint-fix` | CSharpier check / format |
 | `just pipeline-pr` | restore, build, lint and test |
 | `just pipeline-pack-validate` | pack and validate package contents |
 | `just verify-pack-rules` | prove every forbidden-content rule rejects a package |
 | `just smoke-packed-consumers` | pack, then build and run consumers of the packages |
+| `just test-telemetry-integration` | prove `Purview.Telemetry` 6.0.0 reads a generated union (needs the local prerelease feed) |
 | `just skills-update` | install/refresh the skills recorded in `skills-lock.json` |
+| `just skills-check` | report drift between the installed skills and `skills-lock.json` |
 | `just scrub` | remove build output and restart from a clean tree |
 
 ## Guardrails

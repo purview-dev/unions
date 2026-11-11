@@ -14,7 +14,8 @@ that defines it, so an internal polyfill in the consumer's own compilation is en
 ## The compiler contract (verified, not assumed)
 
 The following were read from the C# 15 union proposal and the compiler's own metadata, then proven by the
-experiments kept in `src/tests/SourceGenerator.UnitTests/CompilerBehaviourTests.cs`.
+experiments kept in `src/tests/SourceGenerator.UnitTests/CompilerBehaviourTests.cs` (1–6) and
+`GeneratedUnionRuntimeTests.cs` (7).
 
 | Fact | Evidence |
 | --- | --- |
@@ -38,7 +39,7 @@ the design.
 | 2 | Source `[Union]` + generated constructors | **Passes.** This is the safe fallback if attribute emission ever regresses; the code fix for `UNI0007` supports it. |
 | 3 | `static partial` factory signatures inside the union | **Passes.** The generated implementation part binds before the caller needs it. |
 | 4 | A nested `IUnionMembers` provider whose `Create` bodies come from the source | **Passes, with the documented fallback.** A generator cannot add bodies to a source-declared interface, so the provider owns one-line `Create` bodies that delegate to the generated `CreateCaseN` methods. |
-| 5 | `ITypeSymbol.IsUnion` for a generated union | **True.** This is why the analyzer and the `PDS0006` suppressor work; `Results` still cannot see generated constructors (see [Interop](Interop.md)). |
+| 5 | `ITypeSymbol.IsUnion` for a generated union | **True.** This is why the analyzer and the `PDS0006` suppressor work; Results reads the source case list (see [Interop](Interop.md)). |
 | 6 | Internal polyfills on `net10.0`, no duplicate on `net11.0` | **Passes.** On `net10.0` the compiler recognises an internal `UnionAttribute` defined in the compilation. On `net11.0` no polyfill is emitted and the BCL type is used. |
 | 7 | No boxing in `is`/`switch`/`TryGetValue`, boxing in `Value` | **Passes.** Measured with `GC.GetAllocatedBytesForCurrentThread()`: 0 bytes for `is`, `switch` and `TryGetValue`, 24 bytes for `Value`. |
 
@@ -99,8 +100,14 @@ Design points:
 - **No equality, `ToString`, `Deconstruct`, `Match` or `Switch`** for generated unions in v1. A union is
   matched by its active case; `CA1815` is expected and `PDS0006` answers it. A `record` union gets the
   compiler's record equality over the tag and fields.
+- **Surface C is `CA1034`- and `CA1515`-clean.** The provider must be a public nested interface, so the
+  package's `UNI0000` and `UNI9001` suppression descriptors suppress the nesting and visibility warnings for
+  an `IUnionMembers` provider inside a union; a differently named nested type, or one outside a union, keeps
+  them.
 - **Accessibility is never widened.** The partial declaration repeats the union's accessibility, and every
-  case type must be public because a public constructor cannot expose a less accessible type.
+  case type must be at least as accessible as the union because a public creation member cannot expose a less
+  accessible parameter type. An internal union can therefore use internal case types; a public union needs
+  public case types.
 - **Fully-qualified literal type names** are emitted for case types, so type parameters, arrays and nullable
   types render exactly without relying on a `TypeReference` identity that a type parameter does not have.
 

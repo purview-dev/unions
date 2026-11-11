@@ -19,4 +19,9 @@ public static class UnionsDiagnosticIds
 	/// The compiler's union attribute is required but missing.
 	/// </summary>
 	public const string UnionAttributeRequired = "UNI0007";
+
+	/// <summary>
+	/// A union case type is less accessible than the union.
+	/// </summary>
+	public const string UnionCaseTypeNotAccessible = "UNI0005";
 }

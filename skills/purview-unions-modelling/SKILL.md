@@ -75,6 +75,11 @@ one exists. A source generator cannot add bodies to an interface you declared, s
 one-line `Create` bodies and delegates to the generated `CreateCaseN` methods. Use this surface when you
 want the case list visible to other generators.
 
+Because `IUnionMembers` must be **public**, a strict analyzer set reports `CA1034` and `CA1515` (nested types
+should not be visible; public types should be internal). The package's `UNI0000`/`UNI9001` suppression
+descriptors handle both for an `IUnionMembers` provider nested in a union; no attribute is needed. The nested
+shape is mandated by the language, not a design choice.
+
 ### D — hand-written `Purview.Unions.Union<T1, T2>`
 
 ```csharp
@@ -123,7 +128,8 @@ if (value is null) { }                  // HasValue, no boxing
 
 ## Checklist
 
-1. Every case type is `public` (a public constructor cannot expose a less accessible type).
+1. Every case type is at least as accessible as the union: public for a public union, internal is enough for
+   an internal union.
 2. The declaration is `partial` and is a `struct`, `readonly struct`, `class` or record.
 3. A generic union uses surface B or C, never a `typeof` list.
 4. No two cases are implicitly convertible to each other (`UNI0008`).

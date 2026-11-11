@@ -18,16 +18,25 @@
 			SDK's default (*) would make InstallPurviewSkills write a copy into every agent's folder.
 		-->
 		<PurviewSkillsAgents>universal</PurviewSkillsAgents>
-		<LangVersion>preview</LangVersion>
+
+		<!--
+			Compile with the latest released C# version, never a preview one. The .NET 11 SDK makes C# 15
+			the default for net11.0, which is where union declarations land; a net10.0 project needs
+			`latest` because its default is C# 14. `preview` would enable unshipped language features in
+			shipping packages for no benefit, and unions no longer need it: C# 15 and its runtime types are
+			GA.
+		-->
+		<LangVersion>latest</LangVersion>
 
 		<!--
 			EnablePreviewFeatures is deliberately NOT set.
 
 			Setting it emits [assembly: RequiresPreviewFeatures] into every shipped assembly, which
 			makes CA2252 (error severity by default) fire on every member a consumer touches. It is
-			also unnecessary: a custom union is a language-level pattern and needs only
-			LangVersion=preview. Do not reintroduce this property without re-reading
-			docs/wiki/Getting-Started.md, which documents the distinction.
+			also unnecessary: union declarations are released C# 15 language syntax, and the .NET 10
+			attribute polyfills are compiler metadata, not [RequiresPreviewFeatures] APIs. Do not
+			reintroduce this property without re-reading docs/wiki/Getting-Started.md, which documents
+			the distinction.
 		-->
 
 		<!--

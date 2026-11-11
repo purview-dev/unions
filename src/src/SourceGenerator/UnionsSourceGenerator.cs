@@ -51,9 +51,8 @@ public sealed class UnionsSourceGenerator : IIncrementalGenerator
 		// One source output per union. The analyzer reports the per-target diagnostics; this callback
 		// reports only an unexpected generator failure.
 		var withContext = targets.Combine(generationContext);
-		context.RegisterSourceOutput(
-			withContext,
-			static (sourceProductionContext, item) => ExecuteSafely(sourceProductionContext, item.Left, item.Right)
+		context.RegisterSourceOutput(withContext, static (sourceProductionContext, item) =>
+			ExecuteSafely(sourceProductionContext, item.Left, item.Right)
 		);
 
 		// The .NET 10 polyfills are emitted only when the compiler's union types are absent, at least one
@@ -79,14 +78,11 @@ public sealed class UnionsSourceGenerator : IIncrementalGenerator
 			)
 			.WithTrackingName("GetUnionPolyfillRequest");
 
-		context.RegisterSourceOutput(
-			polyfill,
-			static (sourceProductionContext, request) =>
-			{
-				if (request.Emit)
-					EmitPolyfillsSafely(sourceProductionContext, request.Context);
-			}
-		);
+		context.RegisterSourceOutput(polyfill, static (sourceProductionContext, request) =>
+		{
+			if (request.Emit)
+				EmitPolyfillsSafely(sourceProductionContext, request.Context);
+		});
 	}
 
 	/// <summary>

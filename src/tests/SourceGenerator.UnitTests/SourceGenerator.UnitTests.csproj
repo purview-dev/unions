@@ -5,8 +5,6 @@
 			syntax directly, these tests declare unions through [GenerateUnion], so the net10.0 leg is
 			exercised against the generator's internal polyfills and the net11.0 leg against the BCL types.
 		-->
-		<IsPackable>false</IsPackable>
-		<Title>Purview Unions Source Generator Unit Tests</Title>
 	</PropertyGroup>
 
 	<ItemGroup>

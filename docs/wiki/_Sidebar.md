@@ -5,4 +5,5 @@
 - [Interop](Interop.md)
 - [Trimming and AOT](Trimming-AOT.md)
 - [Performance](Performance.md)
+- [Agent Skills](Agent-Skills.md)
 - [Release Flow](Release-Flow.md)

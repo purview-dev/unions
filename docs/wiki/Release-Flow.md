@@ -14,9 +14,9 @@ GitHub Actions workflows in `.github/workflows/`. This repository owns configura
 
 A push to `main` publishes, so everything below has to be true **before** the merge.
 
-1. **Rename the changelog heading to the version being released.** `CHANGELOG.md`'s newest `## <version>`
-   heading is the one that ships; there is no `Unreleased` heading, precisely so a merge cannot publish an
-   unnamed release.
+1. **Give the release a dated changelog heading.** Move the entries under `## [Unreleased]` into a new
+   `## [<version>] - YYYY-MM-DD` heading before the merge, so the record names the version that shipped.
+   `package.json` stays the authoritative version; the heading is the human-facing history.
 2. **Move new diagnostics into a shipped block.** New or changed rules stay in
    `src/src/SourceGenerator/AnalyzerReleases.Unshipped.md` until that version ships, then move into a
    `## Release <version>` block in `AnalyzerReleases.Shipped.md`. A rule stays recorded under the release that
@@ -32,12 +32,17 @@ A push to `main` publishes, so everything below has to be true **before** the me
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |
-| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with the `[Category=Unit]` test filter, `run-pack: true` and `validate-pack: true`. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
+| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with `run-pack: true` and `validate-pack: true`; the test filter lives only in `.config/purview-build.json`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
 | `.github/workflows/release.yml` | push to `main` | the `purview-release` composite action with `release-mode: NuGet`, Trusted Publishing, and the GitHub Packages mirror controlled by repository variables. |
 
-Both workflows pin `dotnet-version` to the SDK in `global.json` (`11.0.100`). The shared workflow defaults to
-10.0.x, which cannot resolve a repository that targets `net11.0`; keep the two workflow files and `global.json`
-in sync, and read the pinned version from `global.json` rather than from this page.
+Both workflows get their SDK from `global.json` through `purview-dev/build`, which reads `.sdk.version` and
+installs exactly that (`11.0.100`). The shared `purview-build.yml`/`purview-release` code does it, and the two
+hand-rolled PR jobs call `purview-dev/build/actions/dotnet-sdk@main` directly. Keep the pin in `global.json`
+alone: a workflow-level `dotnet-version` is ignored once `global.json` states one, and
+`actions/setup-dotnet`'s `global-json-file` input falls back to the LTS channel when it cannot install the pin,
+reports success, and leaves the first `dotnet` command to fail with "A compatible .NET SDK was not found". The
+`packed-consumers` job additionally installs the .NET 10 runtime the `net10.0` consumer executes on;
+`global.json` still selects the pinned SDK.
 
 `release.yml` runs the composite action rather than the reusable workflow because nuget.org validates the OIDC
 `job_workflow_ref` claim against the registered Trusted Publishing policy, and inside a called workflow that
@@ -54,7 +59,7 @@ does not already exist. Do not create release tags or publish packages manually.
 | `Build:TestRoot` | `src/tests` |
 | `Build:TestPatterns` | `*Tests.csproj` |
 | `Build:TestProjects` | `*Tests*` |
-| `Build:TestFilter` | `/*/*/*/*[Category=Unit]` |
+| `Build:TestFilter` | `/*/*/*/*` |
 | `Build:RunPack` / `Build:ValidatePack` | schema default `true`; the PR workflow passes both explicitly |
 | `PackValidation:RequiredCompilerFlags` | `optimization=release`, asserted for every assembly that ships a PDB |
 | `PackValidation:RequireSymbolPackage` | `true` |
@@ -91,6 +96,7 @@ just pipeline-pack-validate   # restore, build, lint, tests, pack, validate cont
 just pipeline-release         # pack, publish, GitHub release (NuGet mode)
 just pipeline-local-release   # pack, publish to a local NuGet feed
 just smoke-packed-consumers   # pack, then run net10.0 and net11.0 consumers of the package
+just test-telemetry-integration # pack, then prove the Purview.Telemetry 6.0.0 integration (local feed)
 just verify-pack-rules        # prove every ForbiddenContent rule rejects a package
 just version                  # the version package.json declares
 ```

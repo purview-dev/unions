@@ -20,18 +20,16 @@ namespace Purview.Unions;
 /// because <c>typeof(T)</c> is not a legal attribute argument (<c>CS0416</c>).
 /// </para>
 /// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="GenerateUnionAttribute"/> class with the case types
+/// in declaration order.
+/// </remarks>
+/// <param name="cases">The case types of the generated union.</param>
 [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class GenerateUnionAttribute : Attribute
+public sealed class GenerateUnionAttribute(params Type[] cases) : Attribute
 {
-	/// <summary>
-	/// Initializes a new instance of the <see cref="GenerateUnionAttribute"/> class with the case types
-	/// in declaration order.
-	/// </summary>
-	/// <param name="cases">The case types of the generated union.</param>
-	public GenerateUnionAttribute(params Type[] cases) => Cases = cases;
-
 	/// <summary>
 	/// Gets the case types of the generated union, in declaration order.
 	/// </summary>
-	public IReadOnlyList<Type> Cases { get; }
+	public IReadOnlyList<Type> Cases { get; } = cases;
 }

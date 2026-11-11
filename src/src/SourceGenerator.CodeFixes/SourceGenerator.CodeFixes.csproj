@@ -10,7 +10,6 @@
 			components share only public diagnostic ids.
 		-->
 		<IsRoslynComponent>true</IsRoslynComponent>
-		<TargetFramework>netstandard2.0</TargetFramework>
 		<Title>Purview Unions Source Generator Code Fixes</Title>
 		<Description>IDE code fixes for the Purview.Unions source generator: add the missing partial modifier (UNI0001) and, on the documented fallback path, add the compiler's [Union] attribute (UNI0007).</Description>
 	</PropertyGroup>

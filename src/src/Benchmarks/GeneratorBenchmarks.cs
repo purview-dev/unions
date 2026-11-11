@@ -26,6 +26,8 @@ namespace Purview.Unions.Benchmarks;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class GeneratorBenchmarks
 {
+	// The pinned Roslyn 5.9.0 package's Latest is C# 14; parse under Preview so the C# 15 union syntax is
+	// available. The SDK compiler that builds consumers accepts it with LangVersion=latest.
 	readonly CSharpParseOptions _parseOptions = new(LanguageVersion.Preview);
 	MetadataReference[] _references = [];
 	SyntaxTree _syntaxTree = null!;
@@ -41,7 +43,10 @@ public class GeneratorBenchmarks
 		_references = BuildReferences();
 		_syntaxTree = CSharpSyntaxTree.ParseText(BuildSource(UnionCount), _parseOptions);
 		_compilation = CreateCompilation();
-		_driver = CSharpGeneratorDriver.Create(new UnionsSourceGenerator());
+		_driver = CSharpGeneratorDriver.Create(
+			[new UnionsSourceGenerator().AsSourceGenerator()],
+			parseOptions: _parseOptions
+		);
 
 		// Warm the incremental pipeline so IncrementalRun measures the cached path, and fail the setup
 		// (rather than silently benchmarking a broken generator) if the source does not compile.
@@ -53,7 +58,10 @@ public class GeneratorBenchmarks
 	public void ColdRun()
 	{
 		var compilation = CreateCompilation();
-		var driver = CSharpGeneratorDriver.Create(new UnionsSourceGenerator());
+		var driver = CSharpGeneratorDriver.Create(
+			[new UnionsSourceGenerator().AsSourceGenerator()],
+			parseOptions: _parseOptions
+		);
 		driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
 	}
 
