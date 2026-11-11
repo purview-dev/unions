@@ -314,8 +314,8 @@ static class UnionAnalysis
 	)
 	{
 		var builder = ImmutableArray.CreateBuilder<UnionCaseModel>(resolution.Cases.Length);
-		List<ITypeSymbol> exposedTypes = new(resolution.Cases.Length);
-		HashSet<string> seen = new(StringComparer.Ordinal);
+		List<ITypeSymbol> exposedTypes = [with(resolution.Cases.Length)];
+		HashSet<string> seen = [with(StringComparer.Ordinal)];
 		var blocked = false;
 
 		foreach (var caseSymbol in resolution.Cases)
@@ -390,6 +390,7 @@ static class UnionAnalysis
 		if (!TryValidateCaseConversions(compilation, builder, exposedTypes, displayName, declarationLocation, findings))
 			return null;
 
+		// The builder is already in declaration order, so the tag values are correct.
 		return builder.ToImmutable();
 	}
 
@@ -763,7 +764,7 @@ static class UnionAnalysis
 		if (left.Length != right.Length)
 			return false;
 
-		HashSet<string> leftNames = new(StringComparer.Ordinal);
+		HashSet<string> leftNames = [with(StringComparer.Ordinal)];
 		foreach (var type in left)
 		{
 			if (!TryNormalizeCase(type, out var exposed, out _, out _, out _))
@@ -920,6 +921,7 @@ static class UnionAnalysis
 		}
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static TypeDeclarationKind? GetDeclarationKind(INamedTypeSymbol symbol) =>
 		symbol.TypeKind switch
 		{

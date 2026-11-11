@@ -93,11 +93,17 @@ test filter=default_test_filter *args:
 test-unit *args:
     just test "/*/*/*/*[Category=Unit]" {{ args }}
 
-# Run the performance benchmarks (Release, net10.0 by default; pass `-f net11.0` to measure .NET 11)
+# Run the performance benchmarks on .NET 10
 [group('Build and Test')]
 perf-tests *args:
-    echo "Running performance benchmarks for {{ BLUE }}{{ benchmarks_project }}{{ NORMAL }}"
+    echo "Running performance benchmarks for {{ BLUE }}{{ benchmarks_project }}{{ NORMAL }} on net10.0"
     dotnet run --project {{ benchmarks_project }} -c Release -f net10.0 {{ args }}
+
+# Run the performance benchmarks on .NET 11
+[group('Build and Test')]
+perf-tests-net11 *args:
+    echo "Running performance benchmarks for {{ BLUE }}{{ benchmarks_project }}{{ NORMAL }} on net11.0"
+    dotnet run --project {{ benchmarks_project }} -c Release -f net11.0 {{ args }}
 
 # Restore dependencies for the solution
 [group('Build and Test')]

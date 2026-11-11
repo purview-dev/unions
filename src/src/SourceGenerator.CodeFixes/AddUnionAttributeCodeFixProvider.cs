@@ -88,8 +88,8 @@ public sealed class AddUnionAttributeCodeFixProvider : CodeFixProvider
 				var last = separator >= 0 ? name.Substring(separator + 1) : name;
 
 				if (
-					string.Equals(last, "Union", System.StringComparison.Ordinal)
-					|| string.Equals(last, "UnionAttribute", System.StringComparison.Ordinal)
+					string.Equals(last, "Union", StringComparison.Ordinal)
+					|| string.Equals(last, "UnionAttribute", StringComparison.Ordinal)
 				)
 					return true;
 			}

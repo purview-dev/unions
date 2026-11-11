@@ -29,8 +29,8 @@
 		<TUnitVersion>1.81.16</TUnitVersion>
 	</PropertyGroup>
 	<PropertyGroup Label="Benchmark Versions">
-		<!-- Matches Purview.SourceGeneratorFramework and Purview.EventSourcing. -->
-		<BenchmarkDotNetVersion>0.15.8</BenchmarkDotNetVersion>
+		<!-- 0.16 is required to recognise the .NET 11 runtime; 0.15.8 throws NotRecognized for it. -->
+		<BenchmarkDotNetVersion>0.16.0-preview.2</BenchmarkDotNetVersion>
 	</PropertyGroup>
 	<ItemGroup Label="Purview">
 		<PackageVersion
@@ -48,7 +48,7 @@
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
 	</ItemGroup>
 	<ItemGroup Label="Other">
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="11.0.100" />
 	</ItemGroup>
 	<ItemGroup Label="Benchmarks">
 		<PackageVersion Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />

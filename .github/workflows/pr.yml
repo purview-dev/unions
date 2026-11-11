@@ -29,6 +29,26 @@ jobs:
       validate-pack: true
     secrets: inherit
 
+  # Agent skills are committed to .agents/skills and recorded in skills-lock.json. Verify the installed set
+  # on every PR; installing or updating is a deliberate local step and never part of a build.
+  skills:
+    name: Verify agent skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Verify the installed skills match the lockfile
+        shell: pwsh
+        run: |
+          ./scripts/restore-dotnet-tools.ps1
+          dotnet restore src/src/Unions/Unions.csproj
+          dotnet msbuild src/src/Unions/Unions.csproj -t:CheckPurviewSkills
+          dotnet msbuild src/src/Unions/Unions.csproj -t:VerifyPurviewSkills
+
   # Every other job builds against ProjectReferences; this one builds what ships. It packs Purview.Unions
   # to an isolated feed, then builds and runs a net10.0 and a net11.0 console against the package only,
   # leak-scans their output for compiler-host assemblies, and proves every ForbiddenContent rule rejects a

@@ -29,8 +29,8 @@ public record UnionsSourceGeneratorTestOptions : AnalyzerTestOptions
 		LanguageVersion = Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview;
 
 		AdditionalAssemblyTypes = AdditionalAssemblyTypes.AddRange(
-			typeof(global::Purview.Unions.GenerateUnionAttribute),
-			typeof(global::Purview.Unions.Union<int, string>)
+			typeof(GenerateUnionAttribute),
+			typeof(Union<int, string>)
 		);
 		AdditionalNamespaces = AdditionalNamespaces.Add("Purview.Unions");
 

@@ -64,6 +64,29 @@ public sealed class RepositoryConfigTests
 	}
 
 	[Test]
+	public async Task SourceProjects_KeepTheDependencyDirectionOneWay(CancellationToken cancellationToken)
+	{
+		foreach (
+			var project in new[]
+			{
+				"src/src/Unions/Unions.csproj",
+				"src/src/SourceGenerator/SourceGenerator.csproj",
+				"src/src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj",
+			}
+		)
+		{
+			var text = await ReadAsync(project, cancellationToken);
+
+			await Assert
+				.That(text)
+				.DoesNotContain("<ProjectReference")
+				.Because(
+					$"{project} must not take a project dependency; the runtime, generator and code fixes are peers"
+				);
+		}
+	}
+
+	[Test]
 	public async Task BuildConfiguration_NamesEveryPackageContent(CancellationToken cancellationToken)
 	{
 		var config = await ReadAsync(".config/purview-build.json", cancellationToken);

@@ -105,9 +105,7 @@ static class CodeFixHarness
 		foreach (var path in trusted)
 			builder.Add(MetadataReference.CreateFromFile(path));
 
-		builder.Add(
-			MetadataReference.CreateFromFile(typeof(global::Purview.Unions.GenerateUnionAttribute).Assembly.Location)
-		);
+		builder.Add(MetadataReference.CreateFromFile(typeof(GenerateUnionAttribute).Assembly.Location));
 
 		return builder.ToImmutable();
 	}

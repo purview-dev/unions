@@ -26,7 +26,7 @@ From the repository root:
 just perf-tests
 
 # Full suite on .NET 11
-just perf-tests -f net11.0
+just perf-tests-net11
 
 # One suite (the `--` passes the filter to BenchmarkDotNet)
 just perf-tests -- --filter "*GeneratedUnionBenchmarks*"
@@ -36,9 +36,9 @@ Always use a Release build; running benchmarks in Debug produces meaningless num
 
 ## Results
 
-BenchmarkDotNet writes `BenchmarkDotNet.Artifacts/` in this folder: HTML and Markdown reports plus logs.
-The committed results and their interpretation live in
-[`docs/wiki/Performance.md`](../../../docs/wiki/Performance.md).
+BenchmarkDotNet writes `BenchmarkDotNet.Artifacts/` at the repository root (the working directory `just
+perf-tests` runs in): HTML and Markdown reports plus logs. The committed results and their interpretation
+live in [`docs/wiki/Performance.md`](../../../docs/wiki/Performance.md).
 
 ## Adding a suite
 

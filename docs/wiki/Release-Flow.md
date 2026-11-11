@@ -32,7 +32,7 @@ A push to `main` publishes, so everything below has to be true **before** the me
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |
-| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with the `[Category=Unit]` test filter, `run-pack: true` and `validate-pack: true`. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
+| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with the `[Category=Unit]` test filter, `run-pack: true` and `validate-pack: true`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
 | `.github/workflows/release.yml` | push to `main` | the `purview-release` composite action with `release-mode: NuGet`, Trusted Publishing, and the GitHub Packages mirror controlled by repository variables. |
 
 Both workflows pin `dotnet-version` to the SDK in `global.json` (`11.0.100`). The shared workflow defaults to

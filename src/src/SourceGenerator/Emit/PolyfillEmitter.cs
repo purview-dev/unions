@@ -68,7 +68,7 @@ static class PolyfillEmitter
 			body =>
 				body.Property(
 					PropertyLibrary.ValueMemberName,
-					TypeIdentity.Create<object>().MakeNullable(),
+					TypeIdentity.Create<object>().MakeNullable(body),
 					TypeDeclarationAccessibility.Public,
 					options => options with { HasGetter = true }
 				)

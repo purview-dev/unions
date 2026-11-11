@@ -203,7 +203,7 @@ static class UnionEmitter
 
 		writer.Property(
 			PropertyLibrary.ValueMemberName,
-			TypeIdentity.Create<object>().MakeNullable(),
+			TypeIdentity.Create<object>().MakeNullable(writer),
 			TypeDeclarationAccessibility.Public,
 			body => body.Return($"{PropertyLibrary.TagFieldName} switch {{ {arms}_ => null }}"),
 			null
@@ -336,7 +336,7 @@ static class UnionEmitter
 					if (unionCase.RequiresNullCheck)
 						body.IfBlock($"{PropertyLibrary.ValueParameterName} is null", b => b.Return("default"));
 
-					List<string> arguments = new(model.Cases.Count + 1);
+					List<string> arguments = [with(model.Cases.Count + 1)];
 					foreach (var other in model.Cases)
 					{
 						arguments.Add(other.Tag == unionCase.Tag ? ActiveValueExpression(unionCase) : "default");

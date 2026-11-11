@@ -108,9 +108,10 @@ The compiler's contract is not ours to redefine. Every generated union must sati
 ## Skills rules
 
 - Authored skills live in `skills/<name>/SKILL.md` and carry the `purview-unions` prefix.
-- Never install them into `.agents/skills/`; `Repository.UnitTests` enforces that. Never add `.claude/` or
+- Installed upstream skills live in `.agents/skills/` only and are recorded in `skills-lock.json`; the
+  authored skills are never copied there. `Repository.UnitTests` enforces both. Never add `.claude/` or
   `CLAUDE.md`.
-- `skills-lock.json` records the installed set; `just skills-update` restores it.
+- `just skills-check` reports drift; `just skills-update` restores the recorded set.
 
 The three published skills, authored for consumers of the package:
 
@@ -133,7 +134,7 @@ The three published skills, authored for consumers of the package:
 ## Performance rules
 
 - The benchmark project is `src/src/Benchmarks`; run it with `just perf-tests` (Release, net10.0) or
-  `just perf-tests -f net11.0`. Never benchmark a Debug build.
+  `just perf-tests-net11`. Never benchmark a Debug build.
 - Benchmarks are evidence for the README's allocation claims, not a CI gate: shared-runner timings are
   noise. Add or change a suite when a hot path or a claim changes, and record the results in
   `docs/wiki/Performance.md`.
@@ -147,13 +148,15 @@ The three published skills, authored for consumers of the package:
 | `just restore` | restore the solution |
 | `just build` | build the solution |
 | `just test` | run every test project on both target frameworks |
-| `just perf-tests` | run the BenchmarkDotNet suite (Release; `-f net11.0` for .NET 11) |
+| `just perf-tests` | run the BenchmarkDotNet suite on .NET 10 (Release) |
+| `just perf-tests-net11` | run the BenchmarkDotNet suite on .NET 11 (Release) |
 | `just lint-check` / `just lint-fix` | CSharpier check / format |
 | `just pipeline-pr` | restore, build, lint and test |
 | `just pipeline-pack-validate` | pack and validate package contents |
 | `just verify-pack-rules` | prove every forbidden-content rule rejects a package |
 | `just smoke-packed-consumers` | pack, then build and run consumers of the packages |
 | `just skills-update` | install/refresh the skills recorded in `skills-lock.json` |
+| `just skills-check` | report drift between the installed skills and `skills-lock.json` |
 | `just scrub` | remove build output and restart from a clean tree |
 
 ## Guardrails

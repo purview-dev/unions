@@ -123,7 +123,7 @@ What the compiler uses for patterns is the **non-boxing access pattern** the gen
 
 The committed BenchmarkDotNet suite in `src/src/Benchmarks` measures the same operations, the generic surfaces
 and the generator itself, with an `object`-backed baseline. Run `just perf-tests` (Release, `net10.0`) or
-`just perf-tests -f net11.0`; the recorded results are on the [Performance](docs/wiki/Performance.md) page.
+`just perf-tests-net11`; the recorded results are on the [Performance](docs/wiki/Performance.md) page.
 
 ## Declaration kinds
 
