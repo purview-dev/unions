@@ -50,12 +50,35 @@ $originalNuGetPackages = $env:NUGET_PACKAGES
 try {
 	New-Item -ItemType Directory -Force -Path $feed, $PackOutput | Out-Null
 
+	# Purview.Unions deliberately has no ProjectReference to the generator, so packing it restores only
+	# itself. The pack target invokes `GetPurviewMergedAnalyzerFile` on the generator project and
+	# `Build` on the code-fix project through MSBuild, and a project that was never restored has no
+	# package build assets: the framework's targets are not imported and the target does not exist
+	# (MSB4057). Restore both before packing so the gate works on a clean checkout, not only on a
+	# developer machine where an earlier build already restored them.
+	$generator = Join-Path $repositoryRoot 'src/src/SourceGenerator/SourceGenerator.csproj'
+	$codeFixes = Join-Path $repositoryRoot 'src/src/SourceGenerator.CodeFixes/SourceGenerator.CodeFixes.csproj'
+
+	Write-Host 'Restoring the generator and code-fix projects...' -ForegroundColor Cyan
+	& dotnet restore $generator --nologo
+	if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed for $generator with exit code $LASTEXITCODE." }
+
+	& dotnet restore $codeFixes --nologo
+	if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed for $codeFixes with exit code $LASTEXITCODE." }
+
 	Write-Host "Packing Purview.Unions $version to $feed..." -ForegroundColor Cyan
 	& dotnet pack $project -c $Configuration -o $feed --nologo
 	if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed with exit code $LASTEXITCODE." }
 
 	$package = Join-Path $feed "Purview.Unions.$version.nupkg"
 	if (-not (Test-Path $package)) { throw "The packed package '$package' was not produced." }
+
+	# The scratch feed is temporary and removed below, so mirror what was packed into PackOutput as well.
+	# The workflow validates these same files with test-pack-validation-rules.ps1 after this script, and a
+	# PackOutput that received nothing made that gate fail on a clean runner even though packing succeeded.
+	Copy-Item $package $PackOutput -Force
+	$symbolPackage = [System.IO.Path]::ChangeExtension($package, '.snupkg')
+	if (Test-Path $symbolPackage) { Copy-Item $symbolPackage $PackOutput -Force }
 
 	# NuGet reuses an extracted package for the same id and version, so an isolated global-packages
 	# folder is what guarantees each consumer tests the package just packed rather than a stale extract
