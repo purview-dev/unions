@@ -1,8 +1,7 @@
 {
 	"name": "unions",
-	"version": "0.1.0-prerelease.1",
+	"version": "1.0.0-prerelease.1",
 	"license": "MIT",
-	"private": true,
 	"homepage": "https://purview.dev/projects/unions/",
 	"bugs": {
 		"url": "https://github.com/purview-dev/unions/issues"
