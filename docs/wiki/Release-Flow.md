@@ -32,7 +32,7 @@ A push to `main` publishes, so everything below has to be true **before** the me
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |
-| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with the `[Category=Unit]` test filter, `run-pack: true` and `validate-pack: true`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
+| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with `run-pack: true` and `validate-pack: true`; the test filter lives only in `.config/purview-build.json`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
 | `.github/workflows/release.yml` | push to `main` | the `purview-release` composite action with `release-mode: NuGet`, Trusted Publishing, and the GitHub Packages mirror controlled by repository variables. |
 
 Both workflows get their SDK from `global.json` through `purview-dev/build`, which reads `.sdk.version` and
@@ -59,7 +59,7 @@ does not already exist. Do not create release tags or publish packages manually.
 | `Build:TestRoot` | `src/tests` |
 | `Build:TestPatterns` | `*Tests.csproj` |
 | `Build:TestProjects` | `*Tests*` |
-| `Build:TestFilter` | `/*/*/*/*[Category=Unit]` |
+| `Build:TestFilter` | `/*/*/*/*` |
 | `Build:RunPack` / `Build:ValidatePack` | schema default `true`; the PR workflow passes both explicitly |
 | `PackValidation:RequiredCompilerFlags` | `optimization=release`, asserted for every assembly that ships a PDB |
 | `PackValidation:RequireSymbolPackage` | `true` |
