@@ -13,40 +13,46 @@ each other's output.
 
 ## Purview.Results
 
-`[GenerateResult]` requires `ITypeSymbol.IsUnion` and discovers cases from public single-parameter
-constructors. For a union generated here:
+`[GenerateResult]` recognises a `[GenerateUnion]` target by metadata identity and reads the union's
+**source-visible** case list instead of relying on generated output. A generated union therefore works with
+Results without the author writing `[Union]` or constructors:
 
-- the `[Union]` attribute is emitted into generated output, which Results' generator cannot see;
-- the constructors are generated, which Results' generator also cannot see.
+- surface A (`typeof` list) and surface B (partial factory signatures) are read from the source;
+- surface C (`IUnionMembers` provider) is the portable source-visible route when another generator also needs
+  the case list;
+- a `[GenerateUnion]` target with no source-visible case list is reported as `RSG1001` by Results.
 
-A Results error union therefore needs its attribute and constructors written in source. That is a **known
-gap**, and the integration test is skipped with the follow-up link rather than worked around.
+The Results tests use a stand-in `GenerateUnionAttribute` and source-visible conversions because
+`Purview.Unions` is not on a CI-safe package feed yet, so the real two-generator integration test remains a
+follow-up in `purview-dev/results`.
+
+Do not hand-write the constructors to satisfy Results: the union generator would then treat the union as
+hand-written and the declared and existing lists would disagree (`UNI0012`/`UNI0014`).
 
 ### Follow-up
 
-> `purview-dev/results`: `[GenerateResult]` case discovery should read the source case list — the
-> `[GenerateUnion]` `typeof` list, the partial factory signatures, or the nested `IUnionMembers` provider —
-> instead of relying on the generated constructors.
-
-Do not hand-write the constructors to satisfy Results: the generator would then treat the union as
-hand-written and the declared and existing lists would disagree (`UNI0012`/`UNI0014`).
+> `purview-dev/results`: add the two-generator integration test once `Purview.Unions` is on a CI-safe package
+> feed.
 
 ## Purview.Telemetry
 
-Telemetry's `UnionHelpers` prefers a nested `IUnionMembers` provider's static `Create` methods, then falls
-back to public constructors, and treats the non-boxing pattern as present when `HasValue` and a `TryGetValue`
-per case exist.
+`Purview.Telemetry.SourceGenerator` 6.0.0 recognises a `[Purview.Unions.GenerateUnion]` target and reads the
+source-visible case list in the same order as this package: the `typeof` list, partial factory signatures, a
+nested `IUnionMembers` provider, then source-visible constructors. It emits the accessor against the
+`HasValue`/`TryGetValue` members the unions generator emits, so a surface A/B/C union is unwrapped to its case
+value without boxing the union.
 
-- **Surface C works today**, because the provider is in source and the generated union implements the
-  required `HasValue`/`TryGetValue` members.
-- **Surface A** is invisible: the cases live only in generated constructors.
+`just test-telemetry-integration` proves the real two-generator path from the packages: it packs
+`Purview.Unions`, references `Purview.Telemetry.SourceGenerator` 6.0.0 from `LOCAL_NUGET_FEED_PATH` (or
+`TELEMETRY_PRERELEASE_FEED`), and asserts the generated accessor calls `TryGetValue` for each case on
+`net10.0` and `net11.0`.
+
+- Surface A/B/C work; surface C remains the portable source-visible route for another generator that does not
+  read the `[GenerateUnion]` list.
+- A `[GenerateUnion]` target with no source-visible case list is not treated as a union by Telemetry; the
+  unions generator reports `UNI0003`.
 - A telemetry parameter typed as `Purview.Unions.Union<T1, T2>` is visible as a union on `net11.0`, where the
   package assembly carries `[Union]`.
-
-### Follow-up
-
-> `purview-dev/telemetry-sourcegenerator`: when a parameter's type is a `[GenerateUnion]` union, read the
-> source case list in the same way.
 
 ## ZodSharp
 

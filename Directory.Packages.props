@@ -26,7 +26,7 @@
 			Purview.SourceGeneratorFramework.Testing.TUnit 2.0.0 depends on TUnit 1.81.16, so the central
 			version is the framework's floor rather than the older version its siblings pinned.
 		-->
-		<TUnitVersion>1.81.16</TUnitVersion>
+		<TUnitVersion>1.83.0</TUnitVersion>
 	</PropertyGroup>
 	<PropertyGroup Label="Benchmark Versions">
 		<!-- 0.16 is required to recognise the .NET 11 runtime; 0.15.8 throws NotRecognized for it. -->

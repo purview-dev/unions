@@ -76,11 +76,11 @@ static class DiagnosticLibrary
 	public static readonly DiagnosticDescriptor InaccessibleCaseType = new(
 		id: "UNI0005",
 		title: "Union case type is not accessible",
-		messageFormat: "The case type '{0}' is not public, so the public union constructor generated for '{1}' could not expose it; make the case type public",
+		messageFormat: "The case type '{0}' is less accessible than the union '{1}', so the public union constructor generated for it could not expose it; make the case type at least as accessible as the union",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
-		description: "Every union creation member must be public. A public constructor cannot take a less accessible parameter type, so every case type must be public."
+		description: "A public union's creation members are public API, so every case type must be public. An internal union's creation members are effectively internal, so an internal case type is enough; the case type must be accessible from the union's declaration."
 	);
 
 	/// <summary>

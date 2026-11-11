@@ -2,7 +2,8 @@
 	<PropertyGroup>
 		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
 		<OutputType>Exe</OutputType>
-		<LangVersion>preview</LangVersion>
+		<!-- This subtree shadows src/Directory.Build.props, so it repeats the repository's GA language version. -->
+		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>

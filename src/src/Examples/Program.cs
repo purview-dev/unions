@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 PrintSurfaceA();
 PrintSurfaceB();
 PrintSurfaceC();
@@ -78,78 +76,4 @@ void PrintAllocations()
 	var afterValue = GC.GetAllocatedBytesForCurrentThread();
 
 	Console.WriteLine($"alloc: is={afterIs - beforeIs} tryget={afterTry - beforeTry} value={afterValue - beforeValue}");
-}
-
-namespace Purview.Unions.Examples
-{
-	// Surface A: the case list is a typeof list on the attribute. The generator emits the union members,
-	// including the [Union] attribute the compiler recognises.
-	[SuppressMessage(
-		"Design",
-		"CA1515:Consider making public types internal",
-		Justification = "The sample's declarations mirror the public union surface a consumer writes."
-	)]
-	[GenerateUnion(typeof(int), typeof(string))]
-	public readonly partial struct IntOrString;
-
-	// Surface B: the case list is the set of partial static factory signatures, which is how a generic
-	// union names a type parameter (typeof(T) is CS0416).
-	[SuppressMessage(
-		"Design",
-		"CA1515:Consider making public types internal",
-		Justification = "The sample's declarations mirror the public union surface a consumer writes."
-	)]
-	[GenerateUnion]
-	public readonly partial struct Maybe<T>
-	{
-		internal static partial Maybe<T> Some(Some<T> value);
-
-		internal static partial Maybe<T> None(None value);
-	}
-
-	[SuppressMessage(
-		"Design",
-		"CA1515:Consider making public types internal",
-		Justification = "The sample's declarations mirror the public union surface a consumer writes."
-	)]
-	public readonly record struct Some<T>(T Value);
-
-	[SuppressMessage(
-		"Design",
-		"CA1515:Consider making public types internal",
-		Justification = "The sample's declarations mirror the public union surface a consumer writes."
-	)]
-	public readonly record struct None;
-
-	// Surface C: the case list is a nested IUnionMembers provider. The provider's Create bodies delegate to
-	// the generator's CreateCaseN methods; a generator cannot add bodies to a source-declared interface.
-	[SuppressMessage(
-		"Design",
-		"CA1515:Consider making public types internal",
-		Justification = "The sample's declarations mirror the public union surface a consumer writes."
-	)]
-	[GenerateUnion]
-	public readonly partial struct Outcome<T> : Outcome<T>.IUnionMembers
-	{
-		// The language requires the union member provider to be a public nested interface named IUnionMembers.
-		[SuppressMessage(
-			"Design",
-			"CA1034:Nested types should not be visible",
-			Justification = "The C# union member provider is required by the language to be a public nested interface named IUnionMembers."
-		)]
-		public interface IUnionMembers
-		{
-			static Outcome<T> Create(T? value) => Outcome<T>.CreateCase0(value);
-
-			static Outcome<T> Create(Exception? value) => Outcome<T>.CreateCase1(value);
-
-			object? Value { get; }
-
-			bool HasValue { get; }
-
-			bool TryGetValue(out T value);
-
-			bool TryGetValue(out Exception value);
-		}
-	}
 }

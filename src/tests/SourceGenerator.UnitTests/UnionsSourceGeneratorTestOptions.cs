@@ -25,7 +25,9 @@ public record UnionsSourceGeneratorTestOptions : AnalyzerTestOptions
 	/// </summary>
 	public UnionsSourceGeneratorTestOptions()
 	{
-		// A custom union and [Union] are C# 15 features.
+		// The pinned Roslyn 5.9.0 package's Latest is C# 14; the union syntax it must parse is exposed under
+		// Preview there. This is a test-harness detail, not a consumer requirement: the .NET 11 SDK compiler
+		// accepts C# 15 unions with LangVersion=latest, and a net11.0 project needs no switch at all.
 		LanguageVersion = Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview;
 
 		AdditionalAssemblyTypes = AdditionalAssemblyTypes.AddRange(

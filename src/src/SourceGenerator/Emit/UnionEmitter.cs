@@ -72,39 +72,36 @@ static class UnionEmitter
 				: [],
 		};
 
-		writer.Type(
-			options,
-			body =>
+		writer.Type(options, body =>
+		{
+			if (!model.EmitMembers)
 			{
-				if (!model.EmitMembers)
-				{
-					body.Comment(
-						"The declaration is hand-written: its constructors and access members already exist, so only the compiler attribute is generated."
-					);
+				body.Comment(
+					"The declaration is hand-written: its constructors and access members already exist, so only the compiler attribute is generated."
+				);
 
-					return;
-				}
-
-				EmitFields(body, model);
-				EmitConstructors(body, model);
-				EmitValue(body, model);
-				EmitHasValue(body, model);
-				EmitTryGetValue(body, model);
-				EmitFactories(body, model, reference);
-				EmitProviderFactories(body, model, reference);
+				return;
 			}
-		);
+
+			EmitFields(body, model);
+			EmitConstructors(body, model);
+			EmitValue(body, model);
+			EmitHasValue(body, model);
+			EmitTryGetValue(body, model);
+			EmitFactories(body, model, reference);
+			EmitProviderFactories(body, model, reference);
+		});
 	}
 
 	static void EmitFields(CodeWriter writer, UnionModel model)
 	{
 		foreach (var unionCase in model.Cases)
 		{
-			writer.Field(
-				unionCase.FieldName,
-				unionCase.StorageType,
-				TypeDeclarationAccessibility.Private,
-				options => options with { IsReadOnly = true }
+			writer.Field(unionCase.FieldName, unionCase.StorageType, TypeDeclarationAccessibility.Private, options =>
+				options with
+				{
+					IsReadOnly = true,
+				}
 			);
 		}
 

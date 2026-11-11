@@ -19,6 +19,20 @@ public readonly record struct Some<T>(T Value);
 
 public readonly record struct None;
 
+// Surface B: an internal union with internal case types. The generated creation members are public
+// members of an internal type, so an internal case type is sufficient; UNI0005 must not block it.
+readonly record struct InternalSome<T>(T Value);
+
+readonly record struct InternalNone;
+
+[GenerateUnion]
+readonly partial struct InternalMaybe<T>
+{
+	internal static partial InternalMaybe<T> Some(InternalSome<T> value);
+
+	internal static partial InternalMaybe<T> None(InternalNone value);
+}
+
 // Surface C: a generic union declared with a nested IUnionMembers provider.
 [GenerateUnion]
 public readonly partial struct Outcome<T> : Outcome<T>.IUnionMembers

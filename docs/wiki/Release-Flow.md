@@ -14,9 +14,9 @@ GitHub Actions workflows in `.github/workflows/`. This repository owns configura
 
 A push to `main` publishes, so everything below has to be true **before** the merge.
 
-1. **Rename the changelog heading to the version being released.** `CHANGELOG.md`'s newest `## <version>`
-   heading is the one that ships; there is no `Unreleased` heading, precisely so a merge cannot publish an
-   unnamed release.
+1. **Give the release a dated changelog heading.** Move the entries under `## [Unreleased]` into a new
+   `## [<version>] - YYYY-MM-DD` heading before the merge, so the record names the version that shipped.
+   `package.json` stays the authoritative version; the heading is the human-facing history.
 2. **Move new diagnostics into a shipped block.** New or changed rules stay in
    `src/src/SourceGenerator/AnalyzerReleases.Unshipped.md` until that version ships, then move into a
    `## Release <version>` block in `AnalyzerReleases.Shipped.md`. A rule stays recorded under the release that
@@ -91,6 +91,7 @@ just pipeline-pack-validate   # restore, build, lint, tests, pack, validate cont
 just pipeline-release         # pack, publish, GitHub release (NuGet mode)
 just pipeline-local-release   # pack, publish to a local NuGet feed
 just smoke-packed-consumers   # pack, then run net10.0 and net11.0 consumers of the package
+just test-telemetry-integration # pack, then prove the Purview.Telemetry 6.0.0 integration (local feed)
 just verify-pack-rules        # prove every ForbiddenContent rule rejects a package
 just version                  # the version package.json declares
 ```

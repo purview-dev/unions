@@ -127,6 +127,7 @@ static class UnionAnalysis
 
 		if (
 			TryCreateCases(
+				union,
 				resolution,
 				compilation,
 				displayName,
@@ -304,6 +305,7 @@ static class UnionAnalysis
 	}
 
 	static ImmutableArray<UnionCaseModel>? TryCreateCases(
+		INamedTypeSymbol union,
 		CaseResolution resolution,
 		Compilation compilation,
 		string displayName,
@@ -347,7 +349,7 @@ static class UnionAnalysis
 				continue;
 			}
 
-			if (!IsPubliclyAccessible(exposed))
+			if (!IsCaseAccessible(exposed, union, compilation))
 			{
 				Add(findings, DiagnosticLibrary.InaccessibleCaseType, caseLocation, caseName, displayName);
 				blocked = true;
@@ -883,43 +885,79 @@ static class UnionAnalysis
 	}
 
 	/// <summary>
-	/// Determines whether a type and everything it references is public, so a public constructor can
-	/// expose it.
+	/// Determines whether a case type can be exposed by the public creation member generated for the union.
 	/// </summary>
-	static bool IsPubliclyAccessible(ITypeSymbol type)
+	/// <remarks>
+	/// The generated constructor is public, but its effective accessibility is capped by the union and its
+	/// containing types. A public union therefore needs public case types, while an internal or private union
+	/// can use a case type that is at least as accessible as the union and reachable from its declaration.
+	/// This is what lets an internal union use internal case types without a warning.
+	/// </remarks>
+	static bool IsCaseAccessible(ITypeSymbol caseType, INamedTypeSymbol union, Compilation compilation)
+	{
+		if (caseType is ITypeParameterSymbol)
+			return true;
+
+		if (!compilation.IsSymbolAccessibleWithin(caseType, union))
+			return false;
+
+		// The effective accessibility rank is conservative for the protected forms:
+		// a protected or protected-internal union requires a public case type, which is always safe.
+		return EffectiveAccessibilityRank(caseType) >= EffectiveAccessibilityRank(union);
+	}
+
+	/// <summary>
+	/// Computes the effective accessibility of a type as a rank.
+	/// </summary>
+	/// <remarks>
+	/// Accessibility domains are not a total order (protected and internal are incomparable), but the rank
+	/// is only used to decide whether a case type is at least as accessible as the union. It is conservative
+	/// for the protected forms: a protected or protected-internal union requires a public case type, which
+	/// is always safe.
+	/// </remarks>
+	static int EffectiveAccessibilityRank(ITypeSymbol type)
 	{
 		switch (type)
 		{
 			case ITypeParameterSymbol:
-				return true;
+				return AccessibilityRank(Accessibility.Public);
 
 			case IArrayTypeSymbol array:
-				return IsPubliclyAccessible(array.ElementType);
+				return EffectiveAccessibilityRank(array.ElementType);
 
 			case INamedTypeSymbol named:
 			{
 				if (named.IsFileLocal || named.IsUnboundGenericType)
-					return false;
+					return 0;
+
+				var rank = AccessibilityRank(named.DeclaredAccessibility);
+
+				for (var current = named.ContainingType; current is not null; current = current.ContainingType)
+					rank = Math.Min(rank, AccessibilityRank(current.DeclaredAccessibility));
 
 				foreach (var argument in named.TypeArguments)
-				{
-					if (!IsPubliclyAccessible(argument))
-						return false;
-				}
+					rank = Math.Min(rank, EffectiveAccessibilityRank(argument));
 
-				for (var current = named; current is not null; current = current.ContainingType)
-				{
-					if (current.DeclaredAccessibility != Accessibility.Public)
-						return false;
-				}
-
-				return true;
+				return rank;
 			}
 
 			default:
-				return false;
+				return 0;
 		}
 	}
+
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
+	static int AccessibilityRank(Accessibility accessibility) =>
+		accessibility switch
+		{
+			Accessibility.Public => 6,
+			Accessibility.ProtectedOrInternal => 5,
+			Accessibility.Protected => 4,
+			Accessibility.Internal => 3,
+			Accessibility.ProtectedAndInternal => 2,
+			Accessibility.Private => 1,
+			_ => 0,
+		};
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static TypeDeclarationKind? GetDeclarationKind(INamedTypeSymbol symbol) =>

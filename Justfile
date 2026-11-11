@@ -126,6 +126,15 @@ smoke-packed-consumers *args:
     echo "Running the packed consumer gate..."
     pwsh -NoProfile -File scripts/test-packed-consumers.ps1 {{ args }}
 
+# Prove Purview.Telemetry reads a Purview.Unions generated union as a telemetry parameter. Packs Purview.Unions,
+# then builds and runs a net10.0 and a net11.0 consumer against it and Purview.Telemetry.SourceGenerator 6.0.0
+# (read from LOCAL_NUGET_FEED_PATH / TELEMETRY_PRERELEASE_FEED), asserting the generated telemetry accessor uses
+# TryGetValue and leak-scanning the output. See scripts/test-telemetry-integration.ps1 for the options.
+[group('Build and Test')]
+test-telemetry-integration *args:
+    echo "Running the telemetry integration gate..."
+    pwsh -NoProfile -File scripts/test-telemetry-integration.ps1 {{ args }}
+
 # Prove every PackValidation ForbiddenContent rule in .config/purview-build.json rejects a package. Reads artifacts/,
 # so pack first (`just pipeline-pack-validate`); `just pipeline-local-release` moves its packages to the local feed, so
 # pass -PackagesFolder <feed> after it.

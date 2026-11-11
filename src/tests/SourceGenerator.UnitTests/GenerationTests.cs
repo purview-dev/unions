@@ -69,6 +69,39 @@ public sealed class GenerationTests
 	}
 
 	[Test]
+	public async Task SurfaceB_GivenInternalUnionAndInternalCases_GeneratesAndCompiles(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using Purview.Unions;
+
+			namespace Test;
+
+			internal readonly record struct Some<T>(T Value);
+			internal readonly record struct None;
+
+			[GenerateUnion]
+			internal readonly partial struct Option<T>
+			{
+				internal static partial Option<T> Some(Some<T> value);
+				internal static partial Option<T> None(None value);
+			}
+			""";
+
+		using var result = await GenerateAsync(source, cancellationToken);
+		result.AssertNoCompilationErrors();
+
+		var generated = result.GetSource("Test.Option_1.g.cs");
+		await Assert.That(generated).IsNotNull();
+
+		await Assert
+			.That(generated!)
+			.ContainsGeneratedCode("internal static partial global::Test.Option<T> Some(global::Test.Some<T> value)");
+		await Assert.That(generated!).ContainsGeneratedCode("public Option(global::Test.Some<T> value)");
+	}
+
+	[Test]
 	public async Task SurfaceC_EmitsProviderFactoryImplementations(CancellationToken cancellationToken)
 	{
 		const string source = """

@@ -73,6 +73,19 @@ public sealed class GeneratedUnionRuntimeTests
 	}
 
 	[Test]
+	public async Task SurfaceB_InternalUnionAndInternalCases_CreateTheCases(CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		InternalMaybe<int> some = new InternalSome<int>(7);
+		InternalMaybe<int> none = new InternalNone();
+
+		await Assert.That(some.TryGetValue(out InternalSome<int> value)).IsTrue();
+		await Assert.That(value.Value).IsEqualTo(7);
+		await Assert.That(none.TryGetValue(out InternalNone _)).IsTrue();
+	}
+
+	[Test]
 	public async Task SurfaceC_ProviderFactories_CreateTheCases(CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();

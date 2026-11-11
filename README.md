@@ -28,15 +28,16 @@ Console.WriteLine(value switch
 
 ## Package
 
-| Package | Purpose |
-| --- | --- |
-| `Purview.Unions` | The `[GenerateUnion]` attribute, the source generator and code fixes, and the hand-written `Union<T1, T2>` |
+| Package | Purpose | Targets |
+| --- | --- | --- |
+| [`Purview.Unions`](src/src/Unions/Sdk/README.md) | The `[GenerateUnion]` attribute, the source generator and code fixes, and the hand-written `Union<T1, T2>` | `net10.0`, `net11.0` |
 
 ```bash
 dotnet add package Purview.Unions
 ```
 
-The package targets `net10.0` and `net11.0` and carries the merged generator and its code fixes under
+The package README is the same file that ships inside the `.nupkg`
+(`src/src/Unions/Sdk/README.md`). The package carries the merged generator and its code fixes under
 `analyzers/dotnet/cs`, so one `PackageReference` is all a consumer needs.
 
 ## The four surfaces
@@ -90,6 +91,11 @@ union member there instead of on the union. The generator emits the storage and 
 provider owns its one-line `Create` bodies, because a source generator cannot add bodies to an interface you
 declared.
 
+The provider must be **public**, so a strict analyzer set reports `CA1034` (nested types should not be
+visible) and `CA1515` (public types should be internal). The package's `UNI0000` and `UNI9001` suppression
+descriptors handle both for an `IUnionMembers` provider nested in a union; no attribute is needed. The nested
+shape is mandated by the language, not a design choice.
+
 ### D — hand-written `Union<T1, T2>`
 
 ```csharp
@@ -118,7 +124,7 @@ What the compiler uses for patterns is the **non-boxing access pattern** the gen
 | `value is null` (`HasValue`) | No |
 | `value.Value` | **Yes**, for a value-type case |
 
-`tests/SourceGenerator.UnitTests/GeneratedUnionRuntimeTests` asserts exactly this with
+`src/tests/SourceGenerator.UnitTests/GeneratedUnionRuntimeTests.cs` asserts exactly this with
 `GC.GetAllocatedBytesForCurrentThread()`.
 
 The committed BenchmarkDotNet suite in `src/src/Benchmarks` measures the same operations, the generic surfaces
@@ -135,16 +141,19 @@ takes `int?`, and `TryGetValue(out int)` returns false for null — a null value
 
 ## Requirements
 
-- A **C# 15 compiler**: the .NET 11 SDK (or later) with `LangVersion=preview` in the project that declares a
-  union.
-- Target `net10.0` or `net11.0`. On `net10.0` the generator emits internal `[Embedded]` polyfills for
+- A **C# 15 compiler**: the .NET 11 SDK (or later). C# 15 is GA, so `LangVersion=preview` is not required.
+- Target `net10.0` or `net11.0`. A `net11.0` project gets C# 15 by default, so it needs no language-version
+  switch. A `net10.0` project defaults to C# 14, so set `<LangVersion>latest</LangVersion>` in the project
+  that declares a union. On `net10.0` the generator also emits internal `[Embedded]` polyfills for
   `UnionAttribute`/`IUnion`; on `net11.0` the BCL types are used.
 - Do **not** set `EnablePreviewFeatures`. It emits `RequiresPreviewFeatures` assembly-wide and makes `CA2252`
-  fire on every member a consumer touches. `LangVersion=preview` is the only switch needed.
+  fire on every member a consumer touches. `LangVersion=latest` is the only switch needed, and only on
+  `net10.0`.
 
 The generated union is `CA1815`-clean: `Purview.BuildSdk`'s `PDS0006` suppresses the warning for a union
-declaration, because a union is matched by its active case rather than compared by value. No `#pragma` is
-needed.
+declaration, because a union is matched by its active case rather than compared by value. Surface C is
+`CA1034`- and `CA1515`-clean: the package's `UNI0000` and `UNI9001` suppression descriptors cover the
+language-mandated public nested `IUnionMembers` provider. No `#pragma` is needed.
 
 ## Diagnostics
 
@@ -154,7 +163,7 @@ needed.
 | `UNI0002` | Error | Unsupported declaration kind |
 | `UNI0003` | Error | The union declares no cases |
 | `UNI0004` | Error | Duplicate case type |
-| `UNI0005` | Error | A case type is not public |
+| `UNI0005` | Error | A case type is less accessible than the union |
 | `UNI0006` | Error | More cases than the tag can address |
 | `UNI0007` | Error | `[Union]` is required but missing (fallback path) |
 | `UNI0008` | Error | Two case types are implicitly convertible |
@@ -168,8 +177,8 @@ needed.
 | `UNI0016` | Error | The declaration collides with a required member |
 | `UNI9000` | Error | The generator failed unexpectedly |
 
-The package also ships code fixes that add the missing `partial` modifier (`UNI0001`) and, on the documented
-fallback path, the `[Union]` attribute (`UNI0007`).
+The package also ships code fixes that add the missing `partial` modifier (`UNI0001`), make an inaccessible
+case type public (`UNI0005`) and, on the documented fallback path, add the `[Union]` attribute (`UNI0007`).
 
 ## Documentation
 
@@ -179,12 +188,13 @@ fallback path, the `[Union]` attribute (`UNI0007`).
 - [Interop](docs/wiki/Interop.md) — Results, Telemetry, ZodSharp and the follow-ups
 - [Trimming and AOT](docs/wiki/Trimming-AOT.md)
 - [Performance](docs/wiki/Performance.md) — the benchmark suite and the measured allocation results
+- [Agent Skills](docs/wiki/Agent-Skills.md) — what each published skill covers and when to load it
 - [Release Flow](docs/wiki/Release-Flow.md) — the PR and release gates
 
 ## Agent skills
 
-The `purview-unions-modelling`, `purview-unions-diagnostics` and `purview-unions-interop` skills cover this
-package. Install them from the repository:
+The `purview-unions-quickstart`, `purview-unions-modelling`, `purview-unions-diagnostics` and
+`purview-unions-interop` skills cover this package. Install them from the repository:
 
 ```bash
 npx skills add purview-dev/unions
