@@ -67,8 +67,8 @@ Option<int> some = new Some<int>(42);
 ```
 
 A nested `IUnionMembers` provider is the alternative when another generator must see the case list; the
-provider is public, so the package's `UNI0000` and `UNI9001` suppressors handle the resulting `CA1034` and
-`CA1515`. See [Union Design](Union-Design.md).
+provider is public, so the package's `UNI0000`, `UNI9001` and `UNI9002` suppressors handle the resulting
+`CA1034`, `CA1515` and `CA1000`. See [Union Design](Union-Design.md).
 
 ## No generator
 

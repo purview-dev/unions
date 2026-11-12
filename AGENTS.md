@@ -84,17 +84,19 @@ The compiler's contract is not ours to redefine. Every generated union must sati
 ## Diagnostics rules
 
 - Prefix `UNI`. Every reported rule is in `AnalyzerReleases.Unshipped.md` (RS2008). Suppression
-  descriptors are not release-tracked. `UNI0000` and `UNI9001` are suppression descriptors, not rules: they
-  suppress `CA1034` and `CA1515` on a union's public nested `IUnionMembers` provider.
+  descriptors are not release-tracked. `UNI0000`, `UNI9001` and `UNI9002` are suppression descriptors, not
+  rules: `UNI0000` suppresses `CA1034` and `UNI9001` suppresses `CA1515` on a union's public nested
+  `IUnionMembers` provider, and `UNI9002` suppresses `CA1000` on a generic union's provider's static `Create`
+  members.
 - The blocking policy lives beside the descriptors (`DiagnosticLibrary.IsBlocking`); there is one policy
   for both hosts.
 - A rule is reported once. The analyzer reports per-target findings; the generator applies the same
   findings to `GeneratorResult.ShouldProcess` and reports only `UNI9000`.
 - Do not suppress warnings with `NoWarn`, `#pragma warning disable` or `SuppressMessage` in product code.
   The only suppressions kept repo-wide are `Purview.BuildSdk`'s `PDS0006` for `CA1815` on a union
-  declaration, this package's `UNI0000` `DiagnosticSuppressor` for `CA1034` and `UNI9001` for `CA1515` on a
-  union's `IUnionMembers` provider, and the deliberate `RSEXPERIMENTAL006` at the `ITypeSymbol.IsUnion` call
-  in a test.
+  declaration, this package's `UNI0000` `DiagnosticSuppressor` for `CA1034`, `UNI9001` for `CA1515` and
+  `UNI9002` for `CA1000` on a union's `IUnionMembers` provider, and the deliberate `RSEXPERIMENTAL006` at the
+  `ITypeSymbol.IsUnion` call in a test.
 
 ## Packaging rules
 

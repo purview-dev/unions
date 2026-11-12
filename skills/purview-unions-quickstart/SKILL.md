@@ -111,7 +111,7 @@ for inspecting the declared source in isolation; it is not a way to make a faili
 | --- | --- | --- |
 | A | `[GenerateUnion(typeof(int), typeof(string))]` | Every case can be named in an attribute argument |
 | B | partial static factory signatures | A case names a type parameter |
-| C | a nested `IUnionMembers` provider | A generic union, or another generator must see the cases (the provider is public, but `UNI0000`/`UNI9001` suppress the resulting `CA1034`/`CA1515`) |
+| C | a nested `IUnionMembers` provider | A generic union, or another generator must see the cases (the provider is public, but `UNI0000`/`UNI9001`/`UNI9002` suppress the resulting `CA1034`/`CA1515`/`CA1000`) |
 | D | `Union<T1, T2>` | Exactly two cases, or no generator |
 
 ## Checklist

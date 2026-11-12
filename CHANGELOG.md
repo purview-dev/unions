@@ -19,6 +19,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A `UNI0000` `DiagnosticSuppressor` that suppresses `CA1034` and a `UNI9001` suppressor that suppresses
   `CA1515` on the public nested `IUnionMembers` provider the C# union contract requires. Both ship with the
   package's analyzer, so a surface-C union needs no suppression attribute.
+- A `UNI9002` `DiagnosticSuppressor` that suppresses `CA1000` (do not declare static members on generic
+  types) on a generic union's `IUnionMembers` provider static `Create` members. The members are the
+  contract's creation members and the provider is necessarily generic when the union is, so `CA1000` cannot
+  be satisfied without removing the union semantics. This lets the `purview-dev/results`
+  `ProvidedOption<T>.IUnionMembers` provider drop its `SuppressMessage` workaround.
 - A `UNI0005` code fix that makes the case type and every containing type public.
 
 ### Fixed

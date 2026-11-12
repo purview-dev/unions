@@ -47,9 +47,9 @@ keeps the two in sync.
 `UNI0001`–`UNI0016` and `UNI9000`; see `docs/wiki/Diagnostics.md`. `AnalyzerReleases.Unshipped.md` is the
 release-tracked catalogue (RS2008).
 
-`UNI0000` and `UNI9001` are suppression descriptors, not rules: the assembly also ships
+`UNI0000`, `UNI9001` and `UNI9002` are suppression descriptors, not rules: the assembly also ships
 `UnionMembersNestingSuppressor`, which suppresses `CA1034` and `CA1515` on a union's public nested
-`IUnionMembers` provider.
+`IUnionMembers` provider and `CA1000` on a generic provider's static `Create` members.
 
 ## Tests
 

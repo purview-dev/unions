@@ -26,10 +26,12 @@ whether it can emit and reports only `UNI9000`. A rule is reported once.
 Every error blocks its union: the generated constructors, storage and access members are one coherent shape,
 so there is no partial output. `UNI0015` is the only warning and does not block.
 
-`UNI0000` and `UNI9001` are **suppression descriptors**, not reported rules. `UNI0000` suppresses `CA1034`
-(nested types should not be visible) and `UNI9001` suppresses `CA1515` (public types should be internal) on a
-union's public nested `IUnionMembers` provider, which the C# union contract requires. Add either id to
-`NoWarn` to turn that suppression off.
+`UNI0000`, `UNI9001` and `UNI9002` are **suppression descriptors**, not reported rules. `UNI0000` suppresses
+`CA1034` (nested types should not be visible) and `UNI9001` suppresses `CA1515` (public types should be
+internal) on a union's public nested `IUnionMembers` provider, which the C# union contract requires.
+`UNI9002` suppresses `CA1000` (do not declare static members on generic types) on that provider's static
+`Create` members, which are the contract's creation members and are necessarily generic when the union is.
+Add any of these ids to `NoWarn` to turn that suppression off; a consumer should not need to.
 
 ## Details
 

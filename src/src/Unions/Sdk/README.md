@@ -77,8 +77,8 @@ takes `int?`, and `TryGetValue(out int)` returns false for null.
 `UNI0001`–`UNI0016` and `UNI9000`. See the
 [Diagnostics](https://github.com/purview-dev/unions/blob/main/docs/wiki/Diagnostics.md) page. Code fixes add a
 missing `partial` (`UNI0001`), make an inaccessible case type public (`UNI0005`) and, on the fallback path, the
-`[Union]` attribute (`UNI0007`). `UNI0000` and `UNI9001` are suppression descriptors, not rules: they suppress
-`CA1034` and `CA1515` on a union's nested `IUnionMembers` provider.
+`[Union]` attribute (`UNI0007`). `UNI0000`, `UNI9001` and `UNI9002` are suppression descriptors, not rules:
+they suppress `CA1034`, `CA1515` and `CA1000` on a union's nested `IUnionMembers` provider.
 
 ## Switches
 

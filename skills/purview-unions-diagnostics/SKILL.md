@@ -34,10 +34,12 @@ never reported twice.
 Every error blocks its union: the generated constructors, storage and access members are one coherent
 shape, so there is no partial output to emit. `UNI0015` is the only warning and does not block.
 
-`UNI0000` and `UNI9001` are **suppression descriptors**, not reported rules. `UNI0000` suppresses `CA1034`
-(nested types should not be visible) and `UNI9001` suppresses `CA1515` (public types should be internal) on a
-union's public nested `IUnionMembers` provider, which the C# union contract requires. Add either id to
-`NoWarn` to turn that suppression off.
+`UNI0000`, `UNI9001` and `UNI9002` are **suppression descriptors**, not reported rules. `UNI0000` suppresses
+`CA1034` (nested types should not be visible) and `UNI9001` suppresses `CA1515` (public types should be
+internal) on a union's public nested `IUnionMembers` provider, which the C# union contract requires.
+`UNI9002` suppresses `CA1000` (do not declare static members on generic types) on the provider's static
+`Create` members: they are the contract's creation members, and a generic union's provider is necessarily
+generic. Add any of these ids to `NoWarn` to turn that suppression off; you should not need to.
 
 ## `UNI0001` — not partial
 
@@ -104,7 +106,12 @@ The generator catches its own failures so one malformed union cannot discard eve
 
 There is deliberately no `NoWarn`/`#pragma` in this stack. The suppressions are `DiagnosticSuppressors`, not
 reported rules: `Purview.BuildSdk`'s `PDS0006` for `CA1815` on a union declaration, and this package's
-`UNI0000` for `CA1034` and `UNI9001` for `CA1515` on a union's nested `IUnionMembers` provider.
+`UNI0000` for `CA1034`, `UNI9001` for `CA1515` and `UNI9002` for `CA1000` on a union's nested
+`IUnionMembers` provider.
+
+`UNI9002` covers a generic union's provider static `Create` members, which `CA1000` reports on. A
+hand-written `[Union]` generic union's provider needs no `SuppressMessage` attribute for them; the
+suppression descriptor already answers the finding.
 
 ## Checklist
 

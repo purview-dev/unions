@@ -92,9 +92,11 @@ provider owns its one-line `Create` bodies, because a source generator cannot ad
 declared.
 
 The provider must be **public**, so a strict analyzer set reports `CA1034` (nested types should not be
-visible) and `CA1515` (public types should be internal). The package's `UNI0000` and `UNI9001` suppression
-descriptors handle both for an `IUnionMembers` provider nested in a union; no attribute is needed. The nested
-shape is mandated by the language, not a design choice.
+visible) and `CA1515` (public types should be internal). A generic union's provider is itself generic, so its
+static `Create` members are reported as `CA1000` (do not declare static members on generic types). The
+package's `UNI0000`, `UNI9001` and `UNI9002` suppression descriptors handle all three for an `IUnionMembers`
+provider nested in a union; no attribute is needed. The nested shape is mandated by the language, not a
+design choice.
 
 ### D — hand-written `Union<T1, T2>`
 
@@ -152,8 +154,9 @@ takes `int?`, and `TryGetValue(out int)` returns false for null — a null value
 
 The generated union is `CA1815`-clean: `Purview.BuildSdk`'s `PDS0006` suppresses the warning for a union
 declaration, because a union is matched by its active case rather than compared by value. Surface C is
-`CA1034`- and `CA1515`-clean: the package's `UNI0000` and `UNI9001` suppression descriptors cover the
-language-mandated public nested `IUnionMembers` provider. No `#pragma` is needed.
+`CA1034`-, `CA1515`- and `CA1000`-clean: the package's `UNI0000`, `UNI9001` and `UNI9002` suppression
+descriptors cover the language-mandated public nested `IUnionMembers` provider and its static `Create`
+members. No `#pragma` is needed.
 
 ## Diagnostics
 
