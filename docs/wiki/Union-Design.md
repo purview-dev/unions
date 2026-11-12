@@ -100,10 +100,10 @@ Design points:
 - **No equality, `ToString`, `Deconstruct`, `Match` or `Switch`** for generated unions in v1. A union is
   matched by its active case; `CA1815` is expected and `PDS0006` answers it. A `record` union gets the
   compiler's record equality over the tag and fields.
-- **Surface C is `CA1034`- and `CA1515`-clean.** The provider must be a public nested interface, so the
-  package's `UNI0000` and `UNI9001` suppression descriptors suppress the nesting and visibility warnings for
-  an `IUnionMembers` provider inside a union; a differently named nested type, or one outside a union, keeps
-  them.
+- **Surface C is `CA1034`-, `CA1515`- and `CA1000`-clean.** The provider must be a public nested interface,
+  so the package's `UNI0000`, `UNI9001` and `UNI9002` suppression descriptors suppress the nesting, visibility
+  and static-member-on-generic-type warnings for an `IUnionMembers` provider inside a union (for `CA1000`, on
+  its static `Create` members); a differently named nested type, or one outside a union, keeps them.
 - **Accessibility is never widened.** The partial declaration repeats the union's accessibility, and every
   case type must be at least as accessible as the union because a public creation member cannot expose a less
   accessible parameter type. An internal union can therefore use internal case types; a public union needs

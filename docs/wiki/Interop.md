@@ -29,10 +29,21 @@ follow-up in `purview-dev/results`.
 Do not hand-write the constructors to satisfy Results: the union generator would then treat the union as
 hand-written and the declared and existing lists would disagree (`UNI0012`/`UNI0014`).
 
+A hand-written `[Union]` union whose cases live on a nested `IUnionMembers` provider — the shape the Results
+tests use — needs no `SuppressMessage` attribute for `CA1000`. The package's `UNI9002` suppression descriptor
+answers the rule on the provider's static `Create` members, which are generic whenever the union is. See
+[Diagnostics](Diagnostics.md).
+
 ### Follow-up
 
 > `purview-dev/results`: add the two-generator integration test once `Purview.Unions` is on a CI-safe package
 > feed.
+>
+> `purview-dev/results`: once a `Purview.Unions` version carrying `UNI9002` is on the feed, bump
+> `PurviewUnionsVersion` in `Directory.Packages.props` and delete the `CA1000` `SuppressMessage` from
+> `ProvidedOption<T>.IUnionMembers` in `src/tests/SourceGenerator.UnitTests/GeneratedTestUnions.cs`. Verify by
+> raising `CA1000` to `warning` in a temporary project-local `.editorconfig` under that test project: the build
+> must report no `CA1000` for the provider's static `Create` members.
 
 ## Purview.Telemetry
 

@@ -76,9 +76,11 @@ one-line `Create` bodies and delegates to the generated `CreateCaseN` methods. U
 want the case list visible to other generators.
 
 Because `IUnionMembers` must be **public**, a strict analyzer set reports `CA1034` and `CA1515` (nested types
-should not be visible; public types should be internal). The package's `UNI0000`/`UNI9001` suppression
-descriptors handle both for an `IUnionMembers` provider nested in a union; no attribute is needed. The nested
-shape is mandated by the language, not a design choice.
+should not be visible; public types should be internal). A generic union's provider is itself generic, so its
+static `Create` members are reported as `CA1000` (do not declare static members on generic types). The
+package's `UNI0000`/`UNI9001`/`UNI9002` suppression descriptors handle all three for an `IUnionMembers`
+provider nested in a union; no attribute is needed. The nested shape is mandated by the language, not a
+design choice.
 
 ### D — hand-written `Purview.Unions.Union<T1, T2>`
 
