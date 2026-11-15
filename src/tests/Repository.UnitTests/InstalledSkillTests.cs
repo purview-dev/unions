@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Purview.Unions.Repository;
@@ -7,10 +8,12 @@ namespace Purview.Unions.Repository;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Skills are installed by the skills CLI into the universal <c>.agents/skills/</c> folder only, and that
-/// folder and the CLI's <c>skills-lock.json</c> are both committed. This repository ships the lockfile and
-/// installs the skills with <c>just skills-update</c> (the SDK's <c>UpdatePurviewSkills</c> target), so the
-/// tests are vacuous until that has run and become strict afterwards.
+/// Skills are installed by the skills CLI into the universal <c>.agents/skills/</c> folder only. That
+/// folder is a local install - gitignored, never tracked, reproducible from the committed
+/// <c>skills-lock.json</c> - so a skill this repository installs but does not publish cannot be found
+/// through <c>skills add purview-dev/unions</c>. This repository installs them with
+/// <c>just skills-update</c> (the SDK's <c>UpdatePurviewSkills</c> target), so the tests that compare the
+/// install with the record are vacuous until that has run, and strict afterwards.
 /// </para>
 /// <para>
 /// <c>SkillTests</c> validates this repository's own skills in <c>skills/</c>; these are someone else's, so
@@ -128,6 +131,67 @@ public sealed class InstalledSkillTests
 			.That(candidates.Where(File.Exists).ToArray())
 			.IsEmpty()
 			.Because("this repository is not agent-specific: AGENTS.md is its one instruction file");
+	}
+
+	[Test]
+	public async Task AgentsSkills_GivenEverythingTheCLIWrites_IsIgnoredAndNeverTracked(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - the folder is a local install, so nothing under it may be tracked, and the rules that
+		// keep it (and every per-agent folder) out of this repository must be in place. This is what stops
+		// a skill the repository installs but does not publish being found by `skills add
+		// purview-dev/unions`.
+		var tracked = await TrackedFilesUnderAgentsSkillsAsync(cancellationToken);
+		var ignores = await AgentsSkillsIgnoreRulesAsync(cancellationToken);
+
+		// Assert
+		await Assert
+			.That(tracked)
+			.IsEmpty()
+			.Because(
+				"nothing under .agents/skills/ may be tracked: it is a local install, reproducible from "
+					+ $"skills-lock.json with `just skills-install`: {string.Join(", ", tracked)}"
+			);
+		await Assert
+			.That(ignores.Agents)
+			.IsTrue()
+			.Because(".gitignore must keep .agents/skills/ out of this repository");
+		await Assert.That(ignores.Claude).IsTrue().Because(".gitignore must keep .claude/ out of this repository");
+	}
+
+	/// <summary>What git tracks under <c>.agents/skills/</c>, asked of the repository itself.</summary>
+	static async Task<string[]> TrackedFilesUnderAgentsSkillsAsync(CancellationToken cancellationToken)
+	{
+		using Process process = new()
+		{
+			StartInfo = new ProcessStartInfo("git", "ls-files .agents/skills")
+			{
+				WorkingDirectory = RepositoryRoot.Value,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			},
+		};
+		process.Start();
+		var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+		await process.WaitForExitAsync(cancellationToken);
+		return
+		[
+			.. output
+				.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+				.Order(StringComparer.Ordinal),
+		];
+	}
+
+	/// <summary>The ignore rules for the two agent folders, as <c>.gitignore</c> spells them.</summary>
+	static async Task<(bool Agents, bool Claude)> AgentsSkillsIgnoreRulesAsync(CancellationToken cancellationToken)
+	{
+		var lines = await File.ReadAllLinesAsync(Path.Combine(RepositoryRoot.Value, ".gitignore"), cancellationToken);
+		var rules = lines.Select(static line => line.Trim()).ToHashSet(StringComparer.Ordinal);
+		return (
+			rules.Overlaps([".agents/skills/", ".agents/skills", "/.agents/skills/", ".agents/"]),
+			rules.Overlaps([".claude/", ".claude", "/.claude/", "/.claude"])
+		);
 	}
 
 	static bool AgentsSkillsExists(string path) => Directory.Exists(path);
