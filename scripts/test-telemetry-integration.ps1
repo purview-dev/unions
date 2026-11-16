@@ -19,15 +19,15 @@
 	This is the real two-generator integration: both generators run in one compilation and neither sees the
 	other's output, which is exactly the contract the packages must satisfy.
 
-	The Purview.Telemetry.SourceGenerator package is a prerelease dependency of this gate. It is read from
-	LOCAL_NUGET_FEED_PATH (or TELEMETRY_PRERELEASE_FEED); pass -TelemetryFeed when neither is set.
+	Purview.Telemetry.SourceGenerator is read from nuget.org by default. Pass -TelemetryFeed with a folder or a
+	source URL to test a build that is not published yet.
 
 .PARAMETER PackOutput
 	Folder that receives the packed Purview.Unions .nupkg. Defaults to artifacts/telemetry-integration.
 
 .PARAMETER TelemetryFeed
-	The feed that carries Purview.Telemetry.SourceGenerator. Defaults to LOCAL_NUGET_FEED_PATH, then
-	TELEMETRY_PRERELEASE_FEED.
+	The source that carries Purview.Telemetry.SourceGenerator: a NuGet source URL or a local package folder.
+	Defaults to nuget.org. A local folder must contain the .nupkg at the requested version.
 
 .PARAMETER TelemetryVersion
 	The Purview.Telemetry.SourceGenerator version to test. Defaults to 6.0.0.
@@ -47,7 +47,7 @@
 [CmdletBinding()]
 param (
 	[string] $PackOutput = (Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/telemetry-integration'),
-	[string] $TelemetryFeed = $env:LOCAL_NUGET_FEED_PATH,
+	[string] $TelemetryFeed = 'https://api.nuget.org/v3/index.json',
 	[string] $TelemetryVersion = '6.0.0',
 	[ValidateSet('Debug', 'Release')]
 	[string] $Configuration = 'Release',
@@ -57,22 +57,19 @@ param (
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-if ([string]::IsNullOrWhiteSpace($TelemetryFeed)) {
-	$TelemetryFeed = $env:TELEMETRY_PRERELEASE_FEED
-}
+# A NuGet source URL is used as-is; a local feed is checked up front so a cold restore cannot fail with a
+# less useful message later.
+$isRemoteFeed = $TelemetryFeed.StartsWith('http', [System.StringComparison]::OrdinalIgnoreCase)
+if (-not $isRemoteFeed) {
+	if (-not (Test-Path -LiteralPath $TelemetryFeed)) {
+		throw "The telemetry feed '$TelemetryFeed' does not exist. Pass a NuGet source URL or a local package folder."
+	}
 
-if ([string]::IsNullOrWhiteSpace($TelemetryFeed)) {
-	throw "Purview.Telemetry.SourceGenerator is not on a public feed yet. Set LOCAL_NUGET_FEED_PATH or TELEMETRY_PRERELEASE_FEED, or pass -TelemetryFeed."
-}
-
-if (-not (Test-Path -LiteralPath $TelemetryFeed)) {
-	throw "The telemetry feed '$TelemetryFeed' does not exist."
-}
-
-$telemetryPackage = Get-ChildItem -LiteralPath $TelemetryFeed -Filter "Purview.Telemetry.SourceGenerator.$TelemetryVersion.nupkg" |
-	Select-Object -First 1
-if ($null -eq $telemetryPackage) {
-	throw "The telemetry feed '$TelemetryFeed' does not carry Purview.Telemetry.SourceGenerator $TelemetryVersion."
+	$telemetryPackage = Get-ChildItem -LiteralPath $TelemetryFeed -Filter "Purview.Telemetry.SourceGenerator.$TelemetryVersion.nupkg" |
+		Select-Object -First 1
+	if ($null -eq $telemetryPackage) {
+		throw "The telemetry feed '$TelemetryFeed' does not carry Purview.Telemetry.SourceGenerator $TelemetryVersion."
+	}
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot

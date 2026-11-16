@@ -83,11 +83,12 @@ The compiler's contract is not ours to redefine. Every generated union must sati
 
 ## Diagnostics rules
 
-- Prefix `UNI`. Every reported rule is in `AnalyzerReleases.Unshipped.md` (RS2008). Suppression
-  descriptors are not release-tracked. `UNI0000`, `UNI9001` and `UNI9002` are suppression descriptors, not
-  rules: `UNI0000` suppresses `CA1034` and `UNI9001` suppresses `CA1515` on a union's public nested
-  `IUnionMembers` provider, and `UNI9002` suppresses `CA1000` on a generic union's provider's static `Create`
-  members.
+- Prefix `UNI`. Every reported rule that has shipped is in `AnalyzerReleases.Shipped.md` under its release;
+  a new or changed rule goes in `AnalyzerReleases.Unshipped.md` (RS2008) until that version ships.
+  Suppression descriptors are not release-tracked. `UNI0000`, `UNI9001` and `UNI9002` are suppression
+  descriptors, not rules: `UNI0000` suppresses `CA1034` and `UNI9001` suppresses `CA1515` on a union's public
+  nested `IUnionMembers` provider, and `UNI9002` suppresses `CA1000` on a generic union's provider's static
+  `Create` members.
 - The blocking policy lives beside the descriptors (`DiagnosticLibrary.IsBlocking`); there is one policy
   for both hosts.
 - A rule is reported once. The analyzer reports per-target findings; the generator applies the same
@@ -107,8 +108,9 @@ The compiler's contract is not ours to redefine. Every generated union must sati
   analyzer (it would run on itself); the pack target builds it.
 - `DisableUnionsSourceGenerator` is declared as both a `PurviewGeneratorVisibleProperty` and a
   `CompilerVisibleProperty`, and shipped in `Sdk/buildTransitive/Purview.Unions.props` (PSGF0003).
-- Package validation is enabled with no baseline at `0.1.0-prerelease.1`; set the baseline when the first
-  stable ships.
+- Package validation is enabled with no baseline before the first stable. Once `1.0.0` ships, set
+  `PackageValidationBaselineVersion` to `1.0.0` and bump it with every stable so `dotnet pack` fails on an
+  unintended public-API change.
 
 ## Skills rules
 
@@ -161,7 +163,7 @@ The four published skills, authored for consumers of the package:
 | `just pipeline-pack-validate` | pack and validate package contents |
 | `just verify-pack-rules` | prove every forbidden-content rule rejects a package |
 | `just smoke-packed-consumers` | pack, then build and run consumers of the packages |
-| `just test-telemetry-integration` | prove `Purview.Telemetry` 6.0.0 reads a generated union (needs the local prerelease feed) |
+| `just test-telemetry-integration` | prove `Purview.Telemetry` 6.0.0 reads a generated union (reads nuget.org; runs in PR CI) |
 | `just skills-update` | install/refresh the skills recorded in `skills-lock.json` |
 | `just skills-check` | report drift between the installed skills and `skills-lock.json` |
 | `just scrub` | remove build output and restart from a clean tree |

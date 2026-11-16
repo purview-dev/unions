@@ -22,28 +22,18 @@ Results without the author writing `[Union]` or constructors:
   the case list;
 - a `[GenerateUnion]` target with no source-visible case list is reported as `RSG1001` by Results.
 
-The Results tests use a stand-in `GenerateUnionAttribute` and source-visible conversions because
-`Purview.Unions` is not on a CI-safe package feed yet, so the real two-generator integration test remains a
-follow-up in `purview-dev/results`.
+The proof runs from the packages in `purview-dev/results`: its generator tests reference the published
+`Purview.Unions` package, compile a real `[GenerateUnion]` union beside the results generator in one project,
+and execute the generated members. This repository does not depend on another repository's test suite, so
+that suite is the interop evidence; the contract it relies on is the one above.
 
 Do not hand-write the constructors to satisfy Results: the union generator would then treat the union as
 hand-written and the declared and existing lists would disagree (`UNI0012`/`UNI0014`).
 
-A hand-written `[Union]` union whose cases live on a nested `IUnionMembers` provider — the shape the Results
-tests use — needs no `SuppressMessage` attribute for `CA1000`. The package's `UNI9002` suppression descriptor
-answers the rule on the provider's static `Create` members, which are generic whenever the union is. See
-[Diagnostics](Diagnostics.md).
-
-### Follow-up
-
-> `purview-dev/results`: add the two-generator integration test once `Purview.Unions` is on a CI-safe package
-> feed.
->
-> `purview-dev/results`: once a `Purview.Unions` version carrying `UNI9002` is on the feed, bump
-> `PurviewUnionsVersion` in `Directory.Packages.props` and delete the `CA1000` `SuppressMessage` from
-> `ProvidedOption<T>.IUnionMembers` in `src/tests/SourceGenerator.UnitTests/GeneratedTestUnions.cs`. Verify by
-> raising `CA1000` to `warning` in a temporary project-local `.editorconfig` under that test project: the build
-> must report no `CA1000` for the provider's static `Create` members.
+A hand-written `[Union]` union whose cases live on a nested `IUnionMembers` provider needs no
+`SuppressMessage` attribute for `CA1000`. The package's `UNI9002` suppression descriptor answers the rule on
+the provider's static `Create` members, which are generic whenever the union is, and `purview-dev/results`
+has deleted its old workaround on that basis. See [Diagnostics](Diagnostics.md).
 
 ## Purview.Telemetry
 
@@ -54,9 +44,8 @@ nested `IUnionMembers` provider, then source-visible constructors. It emits the 
 value without boxing the union.
 
 `just test-telemetry-integration` proves the real two-generator path from the packages: it packs
-`Purview.Unions`, references `Purview.Telemetry.SourceGenerator` 6.0.0 from `LOCAL_NUGET_FEED_PATH` (or
-`TELEMETRY_PRERELEASE_FEED`), and asserts the generated accessor calls `TryGetValue` for each case on
-`net10.0` and `net11.0`.
+`Purview.Unions`, reads `Purview.Telemetry.SourceGenerator` 6.0.0 from nuget.org, and asserts the generated
+accessor calls `TryGetValue` for each case on `net10.0` and `net11.0`. The gate runs on every pull request.
 
 - Surface A/B/C work; surface C remains the portable source-visible route for another generator that does not
   read the `[GenerateUnion]` list.

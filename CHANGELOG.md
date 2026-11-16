@@ -5,13 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-11-16
+
+The first stable release, unchanged in API and behaviour from `1.0.0-prerelease.3`. The prerelease line
+shipped as:
+
+- `1.0.0-prerelease.1` (2026-11-11) — the first prerelease: the package, its feature set (the
+  `1.0.0-prerelease.1` entry below) and everything in this entry except `UNI9002`;
+- `1.0.0-prerelease.2` (2026-11-12) — version alignment only, with no consumer-visible change;
+- `1.0.0-prerelease.3` (2026-11-12) — the `UNI9002` suppressor.
 
 ### Added
 
 - A `just test-telemetry-integration` gate that packs `Purview.Unions` and runs a `net10.0` and a `net11.0`
   consumer against `Purview.Telemetry.SourceGenerator` 6.0.0, asserting the generated telemetry accessor uses
-  `TryGetValue` for every case.
+  `TryGetValue` for every case. It runs on every pull request and reads the telemetry package from nuget.org.
 - A consumer `purview-unions-quickstart` skill covering install, compiler requirements, a first union and
   the no-generator fallback.
 - An [Agent Skills](docs/wiki/Agent-Skills.md) wiki page that maps each published skill to the task it
@@ -23,7 +31,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   types) on a generic union's `IUnionMembers` provider static `Create` members. The members are the
   contract's creation members and the provider is necessarily generic when the union is, so `CA1000` cannot
   be satisfied without removing the union semantics. This lets the `purview-dev/results`
-  `ProvidedOption<T>.IUnionMembers` provider drop its `SuppressMessage` workaround.
+  `ProvidedOption<T>.IUnionMembers` provider drop its `SuppressMessage` workaround. Shipped in
+  `1.0.0-prerelease.3`.
 - A `UNI0005` code fix that makes the case type and every containing type public.
 
 ### Fixed
@@ -49,7 +58,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The README, `AGENTS.md` and wiki now name all four published skills, and the documentation links and
   changelog guidance match the repository.
 
-## [0.1.0-prerelease.1] - 2026-11-10
+### Not in 1.0
+
+These are deliberate limits of the first stable surface, not outstanding defects. See
+[Union Design](docs/wiki/Union-Design.md) and [Interop](docs/wiki/Interop.md) for the reasoning.
+
+- Generated unions have no equality, `ToString`, `Deconstruct`, `Match` or `Switch`; a `record` union gets
+  the compiler's record equality over its tag and fields. Match on the active case.
+- JSON, Entity Framework Core and ASP.NET Core integration are out of scope. Convert to a DTO at the
+  boundary, map the active case in the owning type, or map to `ProblemDetails` in the host.
+- `purview-dev/zodsharp` still ships its own `Union<T1, T2>`/`NativeUnion<T1, T2>`. Migrating those to
+  `Purview.Unions.Union<T1, T2>` is a cross-repository follow-up.
+
+## [1.0.0-prerelease.1] - 2026-11-11
 
 ### Added
 
