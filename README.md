@@ -26,6 +26,8 @@ Console.WriteLine(value switch
 });
 ```
 
+**Documentation:** [Unions documentation](https://purview.dev/docs/unions/)
+
 ## Package
 
 | Package | Purpose | Targets |
