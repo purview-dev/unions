@@ -21,18 +21,19 @@ A push to `main` publishes, so everything below has to be true **before** the me
    `src/src/SourceGenerator/AnalyzerReleases.Unshipped.md` until that version ships, then move into a
    `## Release <version>` block in `AnalyzerReleases.Shipped.md`. A rule stays recorded under the release that
    *introduced* it, so earlier blocks are never rewritten.
-3. **Bump the package-validation baseline when a stable exists.** There is deliberately no baseline at
-   `0.1.0-prerelease.1`: package validation proves internal consistency until the first stable ships. When it
-   does, set `PackageValidationBaselineVersion` to that release and bump it with every stable.
+3. **Bump the package-validation baseline when a stable exists.** There is deliberately no baseline before
+   the first stable: package validation proves internal consistency until `1.0.0` ships. Once it has, set
+   `PackageValidationBaselineVersion` to `1.0.0` in `src/Directory.Build.targets` and bump it with every
+   stable release, so `dotnet pack` fails on an unintended public-API change.
 4. **Run `just pipeline-pack-validate`**, which covers restore, build, lint, tests, pack and pack validation in
-   one pass, then `just smoke-packed-consumers` and `just verify-pack-rules` when packaging, the generator or a
-   dependency version changed.
+   one pass, then `just smoke-packed-consumers`, `just test-telemetry-integration` and
+   `just verify-pack-rules` when packaging, the generator or a dependency version changed.
 
 ## Workflows
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |
-| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with `run-pack: true` and `validate-pack: true`; the test filter lives only in `.config/purview-build.json`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. |
+| `.github/workflows/pr.yml` | pull requests against `main` (opened, synchronize, reopened, ready_for_review) | `build`: shared `purview-build.yml` with `run-pack: true` and `validate-pack: true`; the test filter lives only in `.config/purview-build.json`. `skills`: verifies `.agents/skills` against `skills-lock.json` without installing anything. `packed-consumers`: packs to an isolated feed, runs a `net10.0` and a `net11.0` consumer against the package only, leak-scans their output and proves every `ForbiddenContent` rule rejects a package. `telemetry-integration`: packs the package, then builds and runs a `net10.0` and a `net11.0` consumer against it and `Purview.Telemetry.SourceGenerator` 6.0.0 from nuget.org, proving both generators in one compilation. |
 | `.github/workflows/release.yml` | push to `main` | the `purview-release` composite action with `release-mode: NuGet`, Trusted Publishing, and the GitHub Packages mirror controlled by repository variables. |
 
 Both workflows get their SDK from `global.json` through `purview-dev/build`, which reads `.sdk.version` and
@@ -83,9 +84,11 @@ removed PDB, a renamed analyzer.
 
 ## Analyzer release tracking
 
-The generator ships `UNI0001`–`UNI0016` and `UNI9000`, so it maintains the Roslyn release-tracking files. The
-catalogue is declared in `src/src/SourceGenerator/AnalyzerReleases.Unshipped.md`, which the compiler's `RS2008`
-rule validates during the build. Suppression descriptors are not release-tracked.
+The generator ships `UNI0001`–`UNI0016` and `UNI9000`, so it maintains the Roslyn release-tracking files.
+Those rules are recorded under `## Release 1.0.0` in `AnalyzerReleases.Shipped.md`. A new or changed rule goes
+in `src/src/SourceGenerator/AnalyzerReleases.Unshipped.md`, which the compiler's `RS2008` rule validates
+during the build, until its version ships. Suppression descriptors (`UNI0000`, `UNI9001` and `UNI9002`) are
+not release-tracked.
 
 ## Commands
 
@@ -96,7 +99,7 @@ just pipeline-pack-validate   # restore, build, lint, tests, pack, validate cont
 just pipeline-release         # pack, publish, GitHub release (NuGet mode)
 just pipeline-local-release   # pack, publish to a local NuGet feed
 just smoke-packed-consumers   # pack, then run net10.0 and net11.0 consumers of the package
-just test-telemetry-integration # pack, then prove the Purview.Telemetry 6.0.0 integration (local feed)
+just test-telemetry-integration # pack, then prove the Purview.Telemetry 6.0.0 integration (nuget.org)
 just verify-pack-rules        # prove every ForbiddenContent rule rejects a package
 just version                  # the version package.json declares
 ```
