@@ -84,6 +84,14 @@ $originalNuGetPackages = $env:NUGET_PACKAGES
 try {
 	New-Item -ItemType Directory -Force -Path $feed, $PackOutput | Out-Null
 
+	# The pack target builds the generator project through MSBuild rather than a ProjectReference, so a
+	# clean checkout has no assets file for it and its package targets (including
+	# GetPurviewMergedAnalyzerFile) are not imported. Restore the solution first; the release pipeline does
+	# the same before packing.
+	Write-Host 'Restoring the solution before packing...' -ForegroundColor Cyan
+	& dotnet restore (Join-Path $repositoryRoot 'src/Unions.slnx') --nologo
+	if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed with exit code $LASTEXITCODE." }
+
 	Write-Host "Packing Purview.Unions $version to $feed..." -ForegroundColor Cyan
 	& dotnet pack $project -c $Configuration -o $feed --nologo
 	if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed with exit code $LASTEXITCODE." }
